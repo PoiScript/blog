@@ -8,7 +8,7 @@ publish = false
 [dependencies]
 chrono = "0.4.10"
 imagesize = "0.8.0"
-json = "0.12.0"
+json = "0.12.4"
 lazy_static = "1.4.0"
 maud = "0.21.0"
 orgize = { version = "0.7.0", default-features = false }
