@@ -12,4 +12,4 @@ json = "0.12.0"
 lazy_static = "1.4.0"
 maud = "0.21.0"
 orgize = { version = "0.7.0", default-features = false }
-syntect = "3.3.0"
+syntect = "4.1.1"
