@@ -27,7 +27,7 @@
     "@angular/service-worker": "~9.0.0-next.12",
     "core-js": "~3.6.1",
     "rxjs": "~6.5.4",
-    "tslib": "^1.10.0",
+    "tslib": "^1.14.1",
     "zone.js": "~0.10.2"
   },
   "devDependencies": {
