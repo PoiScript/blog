@@ -1,0 +1,45 @@
+#+TITLE: about
+#+PUBLISHED: [2019-09-11 Wed]
+#+SLUG: about
+#+TAGS:
+
+* poi
+
+林培奇（Alex Lin），17 岁零 {{{age-days}}} 天。
+
+我的联系方式：
+
+- Email: ~poiscript at gmail dot com~
+
+- Email: ~poiscript at live dot com~
+
+- Telegram: [[https://t.me/PoiScript][@PoiScript]]
+
+- Twitter: [[https://twitter.com/PoiScript][@PoiScript]]
+
+* gpg
+
+我的 PGP 指纹： ~EC56 5FE9 8A6F 316A B69F 6979 8EE0 5E84 4452 6ED5~ 。
+
+你可以从 Keybase 或是我的博客上导入我的公钥。当然，建议你都运行一次，以防止被更
+改：
+
+#+BEGIN_SRC bash
+$ curl https://blog.poi.cat/poi.gpg | gpg --import
+$ curl https://keybase.io/poiscript/pgp_keys.asc | gpg --import
+#+END_SRC
+
+如无异样，gpg 应该会显示无变换（ *not changed* ）；
+
+如有异样，请先运行 ~gpg --delete-keys POI_KEY_ID~ 清除已导入的可疑的 key，然后再
+联系我解决。 >_<
+
+* solomon
+
+solomon 是我的博客的名字，同时也是该博客框架的名字。
+
+solomon 以 MIT 协议开源，项目地址：[[https://github.com/PoiScript/solomon]]；文章在
+知识共享 署名-相同方式共享 4.0协议（CC-BY-SA-4.0）下提供。
+
+solomon 基于 {{{angular-core-version}}} 和 {{{angular-material-version}}} 开发，
+使用 {{{angular-cli-version}}} 构建。

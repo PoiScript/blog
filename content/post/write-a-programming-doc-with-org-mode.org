@@ -1,0 +1,171 @@
+#+TITLE: 用 Org-mode 写编程文档
+#+PUBLISHED: [2018-08-14 Tue]
+#+UPDATED: [2019-10-11 Fri]
+#+SLUG: write-a-programming-doc-with-org-mode
+#+TAGS: emacs org-mode
+
+* 为什么选择 Org-mode
+
+为什么需要选择 Org-mode 和 Emacs 这两个少见的组合来写文档，甚至强调是编程文档呢。
+简单来说 Org-mode 即足够的简单也足够的复杂，说是简单是因为 Org-mode 使用的是类似
+Markdown 的标记语言，不需要担心排版问题；说是复杂则是因为 Org-mode 不仅可以直接
+内嵌 LaTeX 的语句，同时也可以直接输出 LaTeX 格式，对后期排版提供了很大的自由度。
+同时 Emacs 和 Org-mode 的组合提供了许多实用的功能，接下来我们就一点一点来介绍。
+
+#+BEGIN_QUOTE
+下面的快捷键都需要在 Emacs 的环境中使用，快捷键中的括号表示 Spacemacs 的快捷键。
++不用 Emacs 玩什么 Org-mode。+
+#+END_QUOTE
+
+* 在文档和代码之间快速切换编辑
+
+首先我们需要插入代码块。直接输入 ~<s~ 然后按一下 ~<tab>~ 键就可以直接输入
+~#+BEGIN_SRC~ 和 ~#+END_SRC~ ，在两个标记之间的区域就是我们的代码块了。类似
+markdown 我们也可以指定代码块的语言：
+
+[[file:/assets/images/org-mode-src.png][org src block]]
+
+如果想要编辑代码块中的代码，可以直接使用 ~C-c ' (org-edit-special)~ 直接进入到编
+辑代码的功能，这是就可以直接使用该代码块中对应的编程语言的 major mode 了，例如对
+上述的代码块使用改功能的话，就会出现另外一个编辑窗口，在其中就可以使用
+emacs-lips mode 的补全功能了。
+
+[[file:/assets/images/org-mode-src-edit-special.png][org mode src block edit special]]
+
+当然，修改完之后使用相同的快捷键就可以退出对代码的编辑，返回到对 Org-mode 文档的
+编辑。
+
+* 执行文档中的代码
+
+另外一个 Org-mode 强悍的功能就是可以直接执行代码块中代码，然后将他们的输出反馈到
+Org-mode 文件中或者输出到另外一个文件中。例如我们将光标放到代码块上，然后使用
+~C-c C-c (org-ctrl-c-ctrl-c)~ 就可以得到输出的结果：
+
+[[file:/assets/images/org-mode-evaluate.png][org-mode evaluate]]
+
+当然我们也可以设置在哪里以及用什么参数来调用这个函数。同时也支持在行内调用：
+
+[[file:/assets/images/org-mode-function-calls.png][org-mode function calls]]
+
++使用调用函数的方法可以有效避免你忘记了 IEEE 754 标准而产生错误的结果。+
+
+#+BEGIN_QUOTE
+这里的 ~{{{result}}}~ 就表示一个 Org-mode 中的一个宏。它可以在导出 Org-mode 文件
+的时候，将一些定义的变量插入到其中。
+#+END_QUOTE
+
+* 自由方便地引用文件
+
+对于比较复杂的代码，直接写在 Org-mode 文件中就比较繁琐了。所以我们可以使用更直接
+的方式，使用 ~#INCLUDES~ 直接引入代码的文件。
+
+同样的， ~#INCLUDES~ 也有类似的输入方式：直接输入 ~<I~ 然后按一下 Tab 就是类似如
+下的效果：
+
+[[file:/assets/images/org-mode-include.png][org-mode include]]
+
+第一个参数就是文件的路径，第二个参数 ~src~ 表示的是作为代码块引入，最后一个就是
+编程语言的设置。 ~:lines~ 就是引入行数：
+
+[[file:/assets/images/org-mode-include-edit-secial.png][org-mode include edit special]]
+
+#+BEGIN_QUOTE
+当然直接跳到代码编辑模式的功能还是有，快捷键也是相同的 ~C-c ' (org-edit-special)~ 。
+#+END_QUOTE
+
+举个例子来说明将代码和 Org-mode 文件分开存放有什么好处。假设我们写了一个简单的
+Rust 函数和它的单元测试：
+
+#+BEGIN_SRC rust
+pub fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_add() {
+        assert_eq!(2, add(1, 1));
+        assert_eq!(7, add(2, 5));
+        assert_eq!(-4, add(-10, 6));
+    }
+}
+#+END_SRC
+
+我们只想出现第 1-3 行的代码，而隐藏琐碎的单元测试。但是需要注意的是 Org-mode 不
+会引入指定的行数区域的最后一行，所以我们应该写成：
+
+#+BEGIN_SRC
+#+INCLUDE: "./src/main.rs" :lines "1-4" src rust
+#+END_SRC
+
+这样在最后导出 Org-mode 文件的时候，就只会出现第 1-3 行的函数定义部分了。而同时，
+我们还可以继续用 ~cargo~ 来运行单元测试：
+
+#+BEGIN_SRC bash
+$ cargo test
+#    Compiling add v0.1.0 (file:///tmp/add)
+#     Finished dev [unoptimized + debuginfo] target(s) in 0.58s
+#      Running target/debug/deps/add-1b966bd47a8d604b
+#
+# running 1 test
+# test tests::test_add ... ok
+#
+# test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+#+END_SRC
+
+此外，Org-mode 文件还可以引入其他 Org-mode 文件。而且在引入其他 Org-mode 文件时，
+功能更加强大，不仅可以设置行数，还可以设置引入哪个段落。例如，在其他 Org-mode 文
+件中引入我们现在的「自由方便地引用文件」这个段落，就可以写做：
+
+#+BEGIN_SRC
+#+INCLUDE: "write-a-programming-book-with-org-mode.org::*自由方便地引用文件"
+#+END_SRC
+
+[[file:/assets/images/org-mode-include-org.png][org-mode include org]]
+
+* 输出 LaTeX & PDF
+
+最后，当然就是输出成 LaTeX 了，直接使用快捷键 ~C-c C-e l l
+(org-export-dispatch)~ 就能保存成 LaTeX 文件。
+
+当然 LaTeX 就有很多可说的了，例如模板和宏包等。不过这样就扯远了，偏离本篇文章的
+主题了。
+
+这里我就只补充一点，如果需要给输出的 PDF 文件加上代码高亮的话，我们需要安装
+[[https://github.com/gpoore/minted][minted]] 宏包和 [[http://pygments.org/][pygments]] 这个高亮的工具并且设置 Emacs 让 Org-mode 输出LaTeX 的时候
+把这个包带上：
+
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-listings 'minted)
+(add-to-list 'org-latex-packages-alist '("" "minted"))
+#+END_SRC
+
+然后在使用 pdflatex 命令输出 PDF 时候，我们需要加点参数：
+
+#+BEGIN_SRC bash
+$ pdflatex -shell-escape -interaction nonstopmode <tex-file>
+#+END_SRC
+
+最后输出的结果就是这样啦：
+
+[[file:/assets/images/latex-output-pdf-with-syntax-highlight.png][latex outputs pdf with syntax highlight]]
+
+#+BEGIN_QUOTE
+在输出 PDF 的时候，minted 可能会出现类似这样的错误： ~Undefined control
+sequence.~ 。这个时候就需要手动删除 ~_minted-test~ 这个文件夹，然后再运行即可。
+具体可以查看 ~minted~ 的 [[https://github.com/gpoore/minted/issues/92][issue]]。
+#+END_QUOTE
+
+* 结语
+
+其实上述提到的很多功能在别的编辑器或是标记语言中都都能找到。就我所知的：
+JetBrains 的 IDE 已经可以在 Markdown 文档中使用相应语言的编辑模式编辑代码块；
+RMarkdown 和 Jupyter Notebook 等标记语言也提供了执行文档内代码的功能；而最后转换
+成 LaTeX 的功能更是有 pandoc 等多种实现了。但是能将上述这些功能集成在一起，形成
+一个完美的 workflow 的，几乎没有。
+
+有时候我会觉得 Emacs 之于 Org-mode 的意义应该是大于 Org-mode 之于 Emacs。毕竟现
+在人们对 Emacs 的印象大多是：运行速度慢，快捷键反人类， ~))))))))~ 和「要不是为
+了 Org-mode，我早就把 Emacs 卸载了！」:)

@@ -1,0 +1,14 @@
+#+TITLE: Hello World!
+#+PUBLISHED: [2017-01-05 Thu]
+#+SLUG: hello-world
+#+TAGS: thought
+
+[[https://youtu.be/rOU4YiuaxAM][BUMP OF CHICKEN「Hello,world!」on YouTube]]
+
+#+BEGIN_QUOTE
+ハロー　どうも　僕はここ
+
+Hello 你好 我在这里
+
+Hello 你好 我在這裡
+#+END_QUOTE

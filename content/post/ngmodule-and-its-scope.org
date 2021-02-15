@@ -1,0 +1,163 @@
+#+TITLE: NgModule 的作用域
+#+PUBLISHED: [2017-10-16 Mon]
+#+SLUG: ngmodule-and-its-scope
+#+TAGS: angular
+
+* 前言
+
+在开始聊这个话题之前，先提一个我遇到过问题：假设有一个 ~SpinnerService~ ，这是一
+个可以在进行发送 HTTP 请求等异步操作的显示一个加载动画的 Service。
+
+这样看来，它应该是每个 Module 和 Component 中都可能用到的一个 Service，那么我们
+把放到 ~SharedModule~ 的 ~providers~ 当中。然后在需要这个 ~SpinnerService~ 的
+Module 中导入这个 ~SharedModule~ 即可。代码看起来大概是这样的：
+
+#+BEGIN_SRC typescript
+// app/shared/spinner.service.ts
+@Injectable()
+export class SpinnerService {
+  show() {
+    /* code logic */
+  }
+  hide() {
+    /* code logic */
+  }
+}
+
+// app/shared/shared.module.st
+@NgModule({
+  providers: [SpinnerService]
+  // ... other staffs
+})
+export class SharedModule {}
+
+// app/some/some.module.ts
+@NgModule({
+  imports: [SharedModule]
+  // ... other staffs
+})
+export class SomeModule {}
+#+END_SRC
+
+代码看起来没什么问题，而且也能正常运行。但是如果你在两个不同的 Component 中分别
+调用 ~SpinnerService~ 中的 ~show()~ 和 ~hide()~ 函数，你会发现加载动画没有如愿的
+消失；更近一步，如果在 Service 中有共用的数据的，你会发现两个不同的 Component 中
+对数据的修改也无法同步。Component 中的 Service 是由 Module 提供的，所以问题就出
+在 Module 上。
+
+有的读者的可能已经猜到了：虽然两个 Module 中会提供一个 ~SpinnerService~ ，但是他
+们不是同一个实例。
+
+* Dependency Injection
+
+在继续解释为什么不是同一个实例的之前，我想先粗略地说一下为什么应该会是同一个实例。
+这就涉及到一个概念：Dependency Injection，动态注入。
+
+以 angular.io 上的例子为例：假设有一个 ~Car~ 类，其依赖一个 ~Engine~ 类。
+
+于是你可以这么写（不使用 Dependency Injection）：
+
+#+BEGIN_SRC typescript
+export class Car {
+  public engine: Engine;
+  constructor() {
+    this.engine = new Engine();
+  }
+}
+#+END_SRC
+
+当然也可以这么写（使用 Dependency Injection）：
+
+#+BEGIN_SRC typescript
+export class Car {
+  constructor(public engine: Engine) {}
+}
+#+END_SRC
+
+两者看起来区别不大，而且当需要调用 ~engine~ 的时候，用法也是相同的。但是后者的好
+处却有不少：
+
+1. ~Engine~ 和 ~Car~ 的结构是完全独立的：传入 ~Car~ 中的是 ~Engine~ 的一个实例而
+   不是在 ~Car~ 的新建这个实例。所以如果 ~Engine~ 的构造函数发生变化的时候也不需
+   要修改 ~Car~ 中的构造函数。
+2. 因为传入 ~Car~ 中的是一个实例，所以可以复用这个实例，减少内存占用。
+3. 因为传入的只是一个实例，所以甚至可以传入一个虚假用于单元测试的 ~Engine~ 。
+
+Angular 通过 Hierarchical Dependency Injectors 实现了上述的 Dependency Injection。
+Hierarchical Dependency Injectors 具体的实现，例如 Service 的复用，Component的
+Injectors 等都是很值得一说的，不过和本文相关性不大，这里按下不表。
+
+* Providers & Declarations
+
+我们知道一个 Module 中可以有 Components、Directives、Pipes 和 Services。前三者都
+是与 HTML 模板相关的，需要放在在 Module 的 ~declarations~ 中；后者一般用来处理数
+据，放在 ~providers~ 中。
+
+那么 ~providers~ 和 ~declarations~ 的区别是什么呢？其中一个就是两者的作用域不同：
+~providers~ 中是全局的；而 ~declarations~ 则是本地的，只有该 Module 中可以使用。
+
+#+BEGIN_QUOTE
+Services 为什么会是全局的呢？其实很好理解，因为 Services 经过编译之后最后都是生
+成一个类，在导入或是导出它们的时候都会限定在命名空间内。
+#+END_QUOTE
+
+所以，Services 应该只在 ~providers~ 中出现一次；而其他三者则是在需要的 Module
+的 ~declarations~ 地方都出现。
+
+#+BEGIN_QUOTE
+当然，在所有出现的地方都需要写一遍也是非常烦杂。这时我们就可以把他们放到一个
+~SharedModule~ 的 ~declarations~ 和 ~exports~ ，最后在需要的 Module 中导入该
+~SharedModule~ 即可。
+#+END_QUOTE
+
+对应到上面的问题，你会发现确实也只有在 ~SharedModule~ 的 ~providers~ 中出现了
+~SpinnerService~ 呀，但是问题还是存在啊。
+
+其实不止 ~SharedModule~ ，导入了 ~SharedModule~ 的 ~SomeModule~ 相当于也提供了
+~SpinnerService~ 。所以在两个 Module 中就会有两个由不同的 Module 提供的，两个不
+同的 ~SpinnerService~ 。
+
+导入拥有提供了 Services 的 Module，相当与自己提供了相同的 Services。这样的例子这
+样的情况你可能早就接触过了：当你在 ~AppModule~ 中导入了 ~HttpModule~ 之后，你就
+可以使用 ~Http~ 这个全局 Service 来发送 HTTP 请求了。
+
+#+BEGIN_QUOTE
+这里的 ~AppModule~ 指 Root Module，下同。
+#+END_QUOTE
+
+另一方面，如果一个 Module 既有 Components 也有 Services 时则需要分别对待了：在
+~AppModule~ 中导入这个 Module 的时候需要调用 ~forRoot()~ ，它返回的是一个
+~ModuleWithProviders~ ；而在其他的 Module 则是直接导入这个 Module 或者调用
+~forChild()~ 。例如 ~RouterModule~ 就既有 Component ~<router-outlet>~ 和
+Directive ~routerLink~ ，也有 Service ~ActivatedRoute~ 。
+
+* Best Practice
+
+至此，要解决文章开头的问题可以很简单：将 ~SpinnerService~ 放到 ~AppModule~ 的
+~providers~ 里即可。
+
+但是，这样的简单粗暴地将每一个 Service 都交由 ~AppModule~ 提供的解决方法违反了我
+们一贯的原则：尽可能保持每个 Moudle 的功能和结构简单。
+
+所以，我们确实应该将 ~SpinnerService~ 移出 ~SharedModule~ ，然而也不应该放进
+~AppModule~ 而是可以考虑放进一个新建的 ~CoreModule~ 中。而这个 ~CoreModule~ 也应
+该作为一个纯粹的只提供 Services 的 Module，而只在 ~AppModule~ 中导入它。
+
+#+BEGIN_QUOTE
+当然，因为只在 ~AppModule~ 中导入，所以如果有一些只需要在 ~AppComponent~ 中使用
+的 Component，如 ~NavComponent~ 和 ~FooterComponent~ 等也可以考虑放到其中。
+#+END_QUOTE
+
+* References
+
+1. 文章中提到了可以使用一个虚假的 Service 用于 Component 的单元测试，[[https://angular.io/guide/testing#test-a-component-with-a-dependency][这里]]介绍了
+   具体应该怎么做。
+2. Angular 的 Hierarchical Dependency Injectors 系统，这是一个很有趣的系统，每一
+   个 Component 都有一个与之对应的可编辑的 Injector。具体可以查看的 Angular 的官
+   方文档：[[https://angular.io/guide/hierarchical-dependency-injection][Hierarchical Dependency Injectors]]。
+3. 写 Angular 应用的一个原则都是保持每一个 Module 的功能和结构的简单和统一，这一
+   点和 Unix 的哲学不谋而合： *Write programs that do one thing and do it well.*
+   那么我们怎么应该这么设计一个好的 Module 呢？Angular 官方的 NgModule FAQs 中其
+   实给出了[[https://angular.io/guide/ngmodule-faq#feature-modules][答案]]。从中我们可以看出， ~CoreModule~ 这种只提供 Services 和
+   ~SharedModule~ 这种只提供 Components，Directives 和 Pipes 的 Module 是目前来
+   说官方认为最好的设计。

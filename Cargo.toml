@@ -1,0 +1,40 @@
+[package]
+name = "solomon"
+version = "2.0.0"
+authors = ["PoiScript <poiscript@gmail.com>"]
+description = "PoiScript's Blog"
+edition = "2018"
+homepage = "https://blog.poi.cat"
+license = "MIT"
+publish = false
+repository = "https://github.com/PoiScript/solomon"
+
+[dependencies]
+chrono = "0.4.19"
+console_error_panic_hook = "0.1.6"
+js-sys = "0.3.47"
+maud = "0.22.2"
+orgize = { version = "0.8.4", default-features = false }
+wasm-bindgen = "0.2.70"
+wasm-bindgen-futures = "0.4.20"
+web-sys = { version = "0.3.47", features = [
+    "Headers",
+    "Request",
+    "RequestInit",
+    "RequestRedirect",
+    "Response",
+    "ResponseInit",
+    "console",
+] }
+wee_alloc = "0.4.5"
+
+[features]
+default = ["nodejs"]
+workers = []
+nodejs = []
+
+[profile.release]
+lto = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]

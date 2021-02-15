@@ -1,0 +1,11 @@
+# dependencies
+/node_modules
+
+# compiled output
+/dist
+/pkg
+/target
+
+# logs
+yarn-debug.log*
+yarn-error.log*

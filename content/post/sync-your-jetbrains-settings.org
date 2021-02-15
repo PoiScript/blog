@@ -1,0 +1,94 @@
+#+TITLE: 同步你的 JetBrains 设置
+#+PUBLISHED: [2017-03-18 Sat]
+#+SLUG: sync-your-jetbrains-settings
+#+TAGS: github jetbrains
+
+* 前言
+
+我是 JetBrains 的死忠，一是喜欢他们各种功能强大的 IDE；二是喜欢他们推出的 JVM 编
+程语言：[[https://kotlinlang.org/][Kotlin]]，对于我这种 Java 苦手来说，Kotlin 是一个非常不错的替代品。
+
+但是 JetBrains 的 IDE 有一个令人诟病的问题就是：IDE 太多了。所以如果你使用了太多
+JetBrains 的 IDE 的话，这会造成：
+
+1. IDE 的安装和更新等管理起来很麻烦；
+2. 快捷键等设置也很麻烦。
+
+关于第一个问题，JetBrains 官方已经有了解决方法：[[https://www.jetbrains.com/toolbox/app][JetBrains Toolbox]]。
+
+[[file:/assets/images/jetbrains-toolbox-app.jpg][使用 JetBrains Toolbox 可以很方便的管理你的项目和工具]]
+
+有了 Toolbox 之后，所以的 JetBrains 都可以从 Toolbox 下载或者更新，同时 Toolbox
+也会列出所以你使用 JetBrains IDE 的项目。
+
+至于第二个问题，官方也提供了一个解决方法： *JetBrains Settings Repository* 。
+
+* JetBrains Settings Repository
+
+顾名思义，JetBrains Settings Repository 就是一个用于存放你的设置的 *Git 仓库* ，
+你可以把它放在 GitHub 上或者其他托管服务。例如我的就是
+[[https://github.com/PoiScript/JetBrainsSettings]]。
+
+准备好 Settings Repository 之后，在 JetBrains IDE 的 *File > Settings
+Repository* 里输入你的 Settings Repository 的地址：
+
+[[file:/assets/images/settings-repository.png][设置 Setting Repository 的地址]]
+
+#+BEGIN_QUOTE
+如果你的没有找到这个选项的话，请确认一下是否开启了
+[[https://plugins.jetbrains.com/plugin/7566-settings-repository]] 这个插件：
+
+[[file:/assets/images/settings-repository-plugin.png]]
+
+这个插件是默认安装好而且默认开启的。
+#+END_QUOTE
+
+填好地址之后有三个选项：Merge（合并），Overwrite Local（覆写本地配置）和
+Overwrite Remote（覆写远程配置）。
+
+之后的步骤就不用多说了吧：把你需要同步的 IDE 的 Settings Repository 都设为相同的，
+之后只要在一个地方修改了并且覆盖了远程的配置之后，其他的 IDE 只需要覆盖本地的配
+置即可。
+
+#+BEGIN_QUOTE
+当然如果你需要修改远程的 Settings Repository 的话是需要验证的，JetBrains 推荐的
+验证方式是使用 AccessToken。
+
+关于如何获取 GitHub 的 AccessToken，我在讲如何将博客部署到 GitHub Pages 的文章里
+提到过，这里就不赘述了。
+#+END_QUOTE
+
+* 我的配置
+
+这里简述一下我的配置，我的配置肯定不会适合所有人，所以仅供参考。
+
+** UI
+
+我不太喜欢 JetBrains 原生的界面字体，所以我替换成了 Google 的 [[https://fonts.google.com/specimen/Roboto][Roboto]] 字体。
+
+至于编辑器的等宽字体，以前我喜欢用 Adobe 的 [[https://fonts.google.com/specimen/Source+Code+Pro][Source Code Pro]]。不过后来 kookxiang
+安利了我 [[https://github.com/tonsky/FiraCode][Fira Code]]，我就用上了。
+
+至于第二字体则是 [[https://www.google.com/get/noto/help/cjk/][Noto Sans Mono CJK SC]]，主要是为了显示中文字体的。
+
+** 快捷键
+
+因为我除了使用 JetBrains IDE 之外，还同时使用 [[https://atom.io/][GitHub Atom]]，所以我的快捷键的置很
+大程度上是为了同一两者的体验：
+
+1. 删除光标所在的行： ~Ctrl+L~
+2. 移动光标所在的行： ~Ctrl+Shift+Up/Down~
+3. 复制光标所在的行： ~Ctrl+D~
+4. 向上/下新增一个光标（多光标模式）： ~Shift+Alt+Up/Down~
+5. 开启/关闭文件栏： ~Ctrl+\~
+
+** Code Style
+
+Code Style 里我主要改的只有 JavaScript 和 TypeScript：
+
+JavaScript 里是把 Code Style 改成了 Standard，这个用了 WebStorm 2017.1 EAP 的新
+功能。
+
+此外，我还把 JavaScript 的 Language Version 改到了 ECMAScript 6。
+
+TypeScript 则是和 JavaScript 类似。

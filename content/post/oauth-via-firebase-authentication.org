@@ -1,0 +1,219 @@
+#+TITLE: 通过 Firebase Authentication 进行 OAuth 授权
+#+PUBLISHED: [2017-02-19 Sun]
+#+SLUG: oauth-via-firebase-authentication
+#+TAGS: firebase github oauth
+
+* 前言
+
+在上上篇文章里，我介绍了我的新博客系统 *Solomon* ，其中就讲的到了我用了 GitHub
+Issue 做为评论系统。这么做有两个麻烦的地方：
+
+1. 需要为每一篇文章创建一个 issue；
+2. 评论者需要有 GitHub 帐号，然后在登录的状态下到 issue 的页面进行评论。
+
+作为一个处女座，我觉得需要到别的页面才能评论或点赞的用户体验太糟糕了。所以，我考
+虑让评论者通过 OAuth 授权的方式获得 Token，然后就可以直接在文章页面进行评论了。
+
+* OAuth
+
+#+BEGIN_QUOTE
+OAuth（开放授权）是一个开放标准，允许用户让第三方应用访问该用户在某一网站上存储
+的私密的资源（如照片，视频，联系人列表），而无需将用户名和密码提供给第三方应用。
+
+/via 维基百科/
+#+END_QUOTE
+
+OAuth 的具体实现就是通过提供给第三方一个 *Token* ，第三方就可以通过这个 Token 在
+*特定的时间* 内访问 *特定的内容* 。
+
+既然要在 GitHub 上评论，我们就需要先在 GitHub 上注册我们的应用：
+
+打开 [[https://github.com/settings/developers][Developer applications]] 或者进入 GitHub 的设置页面，在侧边栏里选择 *OAuth
+applicatioins* 。
+
+然后选择 *Register a new application* 注册一个新的应用：
+
+[[file:/assets/images/github-register-a-new-oauth-application.png][在 GitHub 中注册新应用]]
+
+#+BEGIN_QUOTE
+注意这里有个 *Authorization callback URL* ，它是我们和 GitHub 完成授权之后的一个
+重定向地址，我们下面也会介绍到。
+#+END_QUOTE
+
+填写好信息之后点击 *Register application* 。之后就可以看到这个界面，就代表我们的
+应用已经注册好了。
+
+[[file:/assets/images/client-id-and-client-secret.png][Client ID 和 Client Secret]]
+
+在这个页面我们还可以可以我们的 *Client ID* 和 *Client Secret* 。
+
+*Client ID* 是用于用户和 GitHub 获得授权的时候使用的，GitHub 通过这个得知你要授
+权的网站，并且会把该网站需要的权限列出来，让用户决定是否授权。
+
+用户确认了之后就会跳转到我们上面提到的 *Callback URL* ，并且返回一个 *code* 。
+
+我们在得到了 *code* 之后，将它和 *Client Secret* 传给 GitHub，GitHub 就会返回一
+个有时限的 *access_token* ，通过这个 token 我们就能访问到 GitHub 的资源了。
+
+但是，OAuth 授权的话意味着需要有服务器帮我们完全上述内容。这对于我这种静态博客来
+说是一大困难。本身就是为了节省打理服务器的时间而选择了静态博客，现在为了一个评论
+的功能再引入一个服务器，不免有点本末倒置。
+
+所幸，托管我的网站的 Firebase 提供了 [[https://firebase.google.com/docs/auth/][Firebasee Authentication]]，让我们可以通过
+Firebasee 的服务器完成整个授权过程。
+
+* Firebase Authentication
+
+关于 Firebase 的介绍在上上一篇我简要的介绍过了。Firebase Authentication 则是
+Firebase 提供的一个身份验证服务。
+
+Firebase Authentication 不仅可以使用 *传统的邮箱密码验证* ，还引入了一些比较流行
+的身份提供商，例如： *Google* ， *Facebook* 和 *Twitter* 等：
+
+[[file:/assets/images/firebase-sign-in-providers.png]]
+
+此外，Firebase Authentication 利用了行业标准：我们上面提到的 *OAuth 2.0* 和
+*OpenID* 等，所以也可以集成到自定义的后端里。
+
+要使用 Firebase Authentication 需要先进行一下配置：首先登录到
+[[https://console.firebase.google.com/][Firebase Console]]。
+
+然后在侧边栏里选择 *Authentication* ，然后选择 *Sign-in Method* 子选项卡：
+
+[[file:/assets/images/firebase-auth-sign-in-method.png]]
+
+接下来开启 GitHub 认证，填写我们的 *Client ID* 和 *Client secret* ：
+
+[[file:/assets/images/firebase-github-previders.png]]
+
+注意到下面地址了吗？那个就是我们的 *回调地址* ，保存好 Firebase 这边的设置之后。
+我们需要回到 GitHub，把回调地址改成 Firebase 提供给我们的那个：
+
+[[file:/assets/images/github-oauth-callback-url.png]]
+
+#+BEGIN_QUOTE
+为了安全，Firebase 限制了只有通过认证的域名才可以通过完全整个用户认证的过程。默
+认的认证的域名只有 localhost 和你项目的默认地址。
+
+所以，如果你使用了自定义域名的话。还需要把你的域名加到 *OAuth redirect domains*
+里：
+
+[[file:/assets/images/firebase-oauth-redirect-domains.png]]
+#+END_QUOTE
+
+* Angularfire2
+
+GitHub 和 Firebase 都设置好之后，就可以正式的使用了。
+
+Firebase Authentication 提供了两种使用方法：[[https://github.com/firebase/FirebaseUI-Web][FirebaseUI]] 和 [[https://firebase.google.com/docs/auth/web/github-auth][Firebase
+Authentication SDK]]。
+
+FirebaseUI 尚处于测试阶段，所以我这里选择用 Firebase Authentication SDK。
+
+Firebase 提供的 [[https://github.com/firebase/quickstart-js/blob/master/auth/github-popup.html][Demo]] 是在应用的 HTML 中加入 ~firebase.js~ 文件，然后在
+~<script>~ 中定义各种操作。
+
+既然我们已经用了 *Angular* ，就不需要用这么麻烦的方法了。我们这里用 Angular 官方
+提供的库：[[https://github.com/angular/angularfire2][Angularfire2]]。
+
+设置 Angularfire2 很容易，先 *安装依赖* ：
+
+#+BEGIN_SRC bash
+$ yarn add firebase angularfire2
+# or
+$ npm install firebase angularfire2 --save
+#+END_SRC
+
+然后在你的 *根模块* 里加上：
+
+#+BEGIN_SRC typescript
+export const firebaseConfig = {
+  apiKey: "<your-key>",
+  authDomain: "<your-project-authdomain>",
+  databaseURL: "<your-database-URL>",
+  storageBucket: "<your-storage-bucket>",
+  messagingSenderId: "<your-messaging-sender-id>"
+};
+
+@NgModule({
+  imports: [BrowserModule, AngularFireModule.initializeApp(firebaseConfig)],
+  declarations: [AppComponent],
+  bootstrap: [AppComponent]
+})
+export class AppModule {}
+#+END_SRC
+
+注意要将其中的 ~firebaseConfig~ 改成你的项目的配置。
+
+配置在哪里找呢？在你的 *Firebase Console* 的 *Overview* 里点击 *Add Firebase to
+your web app* ：
+
+[[file:/assets/images/firebase-config-for-web.png][firebase 配置]]
+
+配置完了之后就可以使用了。例如，登录的话需要调用 ~AngularFire.auth#login()~ ：
+
+#+BEGIN_SRC typescript
+this.af.auth
+  .login({
+    provider: AuthProviders.Github,
+    method: AuthMethods.Popup,
+    scope: ["public_repo"]
+  })
+  .then((res: any) => {
+    console.log(res);
+    if ("accessToken" in res.github) {
+      this.tokenService.setToken(res.github.accessToken);
+    } else {
+      this.snackBarOpen("Access Token Not Found, Re-login Please.", 1000);
+    }
+  });
+#+END_SRC
+
+这里需要注意两点：
+
+1. 为了安全，GitHub 只会在登录的时候返回 ~accessToken~ 。所以我们需要在发起登录
+   请求的之后调用 ~.then()~ ，获取我们需要的 ~accessToken~ ，存在我们的
+   *TokenService* 里或者其他地方。
+2. 我们获取 ~accessToken~ 的目地是用它来调用 *GitHub API* ，实现评论的功能的。所
+   以我们在登录的时候需要多申请一个 ~public_repo~ 的权限。否则就会出现 ~Issue
+   not viewable by xxx~ 等错误。
+
+#+BEGIN_QUOTE
+我一开始没发现，还去 stackoverflow 提问：
+[[https://stackoverflow.com/questions/42323439/how-to-post-comment-using-github-oauth-token-in-angular-2]]
+:(
+
+在这里感谢一下 [[https://stackoverflow.com/users/1074361/pedro-nascimento]]，帮
+我找到了问题所在。:)
+#+END_QUOTE
+
+得到了 ~accessToken~ 之后能干的事情就有很多了，例如在 Solomon 里直接：添加/修改/
+删除评论，添加/删除 Reaction；此外还可通过 ~accessToken~ 认证每一次 GitHub API
+的调用，实现增加 GitHub API 的调用上限：
+https://developer.github.com/v3/#rate-limiting
+
+* 存在的问题
+
+如果仔细看我上面的代码就会发现我是把 ~accessToken~ 放在了 ~TokenService~ ，而没
+有使用持久化存储，例如数据库等。这样的话，意味着每次浏览完 Solomon，关闭页面之后，
+下次再来的话，就需要重新登录一遍了。
+
+当然，也不是没有办法，Firebase 还提供了 *实时数据库* ，可以把 ~accessToken~ 存在
+里面。
+
+不过这样就意味着我可以直接接触到 ~accessToken~ 。虽然这个 ~accessToken~ 的权限不
+多，只能访问公共仓库，而且有时限。但是我还是不希望让整个认证的过程变得不那么透明，
+所以目前还是 *保留这个问题* 。
+
+* 后语
+
+就像我上一章里介绍了 Firebase Hosting 之后说的那样。Hosting 和 Authentication 只
+是 Firebase 众多功能中的两个而已：
+
+[[file:/assets/images/firebase-feature.png][firebase 中的其他功能]]
+
+Firebase 还有更多非常使用的功能，像上图中的 Analytics（用户分析），Datebase（实
+时数据库），Crash Reporting（错误追踪），Test Lab（测试平台，测试 Android 应用的
+兼容性），Notifications（云推送）和AdMob（广告获利）等才是 Firebase 的大杀器。
+
+所以， *Google 大法好* 。:)

@@ -1,0 +1,30 @@
+{
+  "name": "solomon",
+  "version": "2.0.0",
+  "author": "PoiScript <poiscript@gmail.com>",
+  "description": "PoiScript's Blog",
+  "homepage": "https://blog.poi.cat",
+  "license": "MIT",
+  "private": true,
+  "repository": "git@github.com:PoiScript/solomon.git",
+  "scripts": {
+    "start": "node scripts/dev.js",
+    "dev": "node scripts/dev.js"
+  },
+  "dependencies": {
+    "prismjs": "^1.23.0"
+  },
+  "devDependencies": {
+    "@wasm-tool/wasm-pack-plugin": "^1.3.2",
+    "css-loader": "^5.0.2",
+    "express": "^4.17.1",
+    "form-data": "^3.0.0",
+    "less": "^4.1.1",
+    "less-loader": "^8.0.0",
+    "mini-css-extract-plugin": "^1.3.6",
+    "node-fetch": "^2.6.1",
+    "webpack": "^5.21.2",
+    "webpack-dev-middleware": "^4.1.0",
+    "which": "^2.0.2"
+  }
+}

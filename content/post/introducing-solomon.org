@@ -1,0 +1,154 @@
+#+TITLE: 新的博客系统 Solomon
+#+PUBLISHED: [2017-01-15 Sun]
+#+UPDATED: [2017-02-13 Mon]
+#+SLUG: introducing-solomon
+#+TAGS: angular blog
+
+#+BEGIN_QUOTE
+2017-02-13: 添加了配置文件部分
+#+END_QUOTE
+
+* 前言
+
+以前我的博客用的是 [[https://hexo.io/][Hexo]]。但是我用起来感觉限制还是太多，然后又尝试了一下其他的静
+态博客生成器，例如：[[https://gohugo.io/][Hugo]]、[[https://jekyllrb.com/][Jekyll]]、[[https://ghost.org/][Ghost]] 等，发现也不太满足我的需求。恰巧，
+Angular 2 发布了，于是我就萌生了自己写一个博客系统的想法。
+
+说干就干，repo 的名字就叫 Solomon，和我的博客同名。
+
+* Angular 简介
+
+Angular 是 Google 开发的前端框架，据 [[https://angular.cn][Angular 中文网]] 介绍，其有如下功能：
+
+#+BEGIN_QUOTE
+Angular 特性与优点：跨平台（Cross Platform）、速度与性能（Speed and Performance）、
+生产率（Productivity）和完整开发故事（Full Development Story）。
+#+END_QUOTE
+
+我选择 Angular 主要有一下几方面的考虑：
+
+1. Angular 2 框架使用 Microsoft 的 TypeScript 开发，而且官方推荐使用的语言也是
+   TypeScript。TypeScript 是 JavaScript 的 *一个严格超集* ，并且添加了 *静态类
+   型* 和 *面向对象编程* ；
+2. 此外，Angular 2 还集成了 Microsoft 的另外一个产品 RxJS （Reactive Extensions
+   for JavaScript, JavaScript 的响应式扩展）
+3. 最后一点，则是 Google Developers 的 *中文博客* 已经正式发布，其中就包括
+   [[https://angular.io][Angular 中文网]]
+
+* 配置文件
+
+为了实现配置文件的功能，我写了一个接口 ~SolomonConfig~ ：
+
+#+BEGIN_SRC typescript
+export interface SolomonConfig {
+  BLOG_NAME: string;
+  RECENT_POST_LIMIT: number;
+  RECENT_ANIME_LIMIT: number;
+  RECENT_PROJECT_LIMIT: number;
+  GITHUB_USERNAME: string;
+  GITHUB_POST_REPO: string;
+  KITSU_ID: number;
+};
+#+END_SRC
+
+使用之前需要先继承这个接口：
+
+#+BEGIN_SRC typescript
+export const CONFIG: SolomonConfig = {
+  BLOG_NAME: "Solomon",
+  RECENT_POST_LIMIT: 6,
+  RECENT_ANIME_LIMIT: 6,
+  RECENT_PROJECT_LIMIT: 6,
+  GITHUB_USERNAME: "PoiScript",
+  GITHUB_POST_REPO: "Solomon-Post",
+  KITSU_ID: 140033
+};
+
+export const CONFIG_TOKEN = new OpaqueToken("config");
+#+END_SRC
+
+然后就可以通过 ~@Inject(CONFIG_TOKEN) config: SolomonConfig~ 来获得我们设置的
+~config~ ，进而获得我们的配置。
+
+* 文章
+
+我的文章放在一个单独的 [[https://github.com/PoiScript/Solomon-Post][Repository]] 里，主要由如下的考虑：
+
+1. 我不想把文章和框架放在一起，这样有夹带私货的感觉；
+2. 方便给文章和框架使用不同的协议：框架是 MIT 协议，文章是 知识共享 署名-相同方
+   式共享 4.0 协议；
+3. 方便以后迁移到不同的博客框架
+
+我的文章是通过 *XHR 异步请求* 获取的，传输的格式是 *JSON* 。理由如下
+
+1. XHR 可以实现 *懒加载（lazy load）* ；
+2. JSON 数据格式小；
+3. TypeScript(JavaScript) 可以很方便的解析 JSON。
+
+#+BEGIN_QUOTE
+虽然我是用 JSON 存储了文章数据，在显示的时候用浏览器渲染，而不是像其他静态博客那
+样 *生成 HTML 纯静态的文件* 。但是我的 JSON 数据是静态的而且和其他 HTML CSS JS
+文件托管在一起，所以我的博客理论上讲还是一个 *静态博客* 。:)
+#+END_QUOTE
+
+我的文章的用 Markdown 写的，于是我需要先将 Markdown 渲染成 HTML 格式，然后再封装
+成JSON。
+
+于是我写了[[https://github.com/PoiScript/Solomon-Post/blob/master/build.ts][一个脚本]]，它可以把 ~src/markdown~ 里的文章解析成 ~src/json~ 里的 JSON
+文件。此外还可以生成以日期排序的 ~archive.json~ 和以分类信息分类好的
+~category.json~ 以方便检索。
+
+* 评论
+
+评论我用的是 *GitHub Issue* 。一是 issue comment 相比其他的评论系统，可以实现更
+多的功能，像支持部分 *Markdown* 和可以进行 *reaction* （例如点赞、点踩之类的）。
+二是 GitHub 提供 Issue Comment 的 *API* ，借此我就可以实现 *自定义* 评论的排版。
+
+当然麻烦也是有的，一是评论者需要有 *GitHub* 账号，不过我想应该不是难事；二是每篇
+文章需要建一个 issue。
+
+此外，在 Angular 中调用 GitHub Issue API 的时候还有一个问题，就是获取 Reaction
+的时候需要加一个 *Header* ：
+
+#+BEGIN_SRC http
+accept: application/vnd.github.squirrel-girl-preview
+#+END_SRC
+
+在 Angular 中，就需要这么写：
+
+#+BEGIN_SRC typescript
+function getIssueComments(): Promise<Comment[]> {
+  let headers = new Headers();
+  headers.append("accept", "application/vnd.github.squirrel-girl-preview");
+  return this.http
+    .get(url, { headers: headers })
+    .toPromise()
+    .then(res => res.json() as Comment[]);
+}
+#+END_SRC
+
+顺便提一下，我的评论系统中只会显示 *+1* 和 *-1* 的 Reaction，一是我觉得有这两个
+就够了；二是我在 *Material Design Icons* 里没找到另外几个比较符合 Emoji 的图标。
+:(
+
+* 搜索
+
+搜索我用的是 *GitHub Code Search* 。使用它的主要原因和上面的评论相同，因为
+GitHub 提供了相应的 API，所以可以借此实现 *自定义* 布局。
+
+上面我提到过我的文章是用 *Markdown* 写的，而且也托管于 *GitHub* 。于是只要在
+GitHub Code Search API 的参数中指定搜索特定的 repo 中后缀名为 ~.md~ 的文件即可实
+现搜索。
+
+此外 *GitHub Code Search API* 还可以返回匹配的文本的上下文，借此可以实现 *搜索结
+果的预览* 。不过和上面的 Reaction 相同，开启这个特性需要 *添加一个 Header* ：
+
+#+BEGIN_SRC http
+accept: application/vnd.github.v3.text-match+json
+#+END_SRC
+
+* 后语
+
+最后，整个博客系统以 [[https://github.com/PoiScript/Solomon/blob/master/LICENSE][MIT 协议]]开源于 [[https://github.com/PoiScript/Solomon][PoiScript/Solomon]]，目前没有写文档的打算。不
+过如果有人真的想用这个博客系统的话，可以在我的[[https://blog.poi.cat/about][关于界面]]的选择任意一种联系方式联系
+我，我会尽力解答你的疑问。:)
