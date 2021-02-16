@@ -1,0 +1,28 @@
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Install node
+        uses: actions/setup-node@master
+        with:
+          node-version: 12
+
+      - name: Build
+        run: node scripts/build.js
+
+      - name: Publish
+        if: github.ref == 'refs/heads/wasm'
+        run: node scripts/publish.js
+        env:
+          CF_TOKEN: ${{ secrets.CF_TOKEN }}
