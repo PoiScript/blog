@@ -1,7 +1,5 @@
 use chrono::{DateTime, NaiveDate, Utc};
-use js_sys::Date;
 use maud::html;
-use std::time::{Duration, UNIX_EPOCH};
 use web_sys::*;
 
 use crate::partials::OrgHtml;
@@ -22,7 +20,7 @@ pub async fn rss() -> Response {
                 link rel="self" href="https://blog.poi.cat/rss" {}
                 link rel="alternate" href="https://blog.poi.cat" {}
                 generator { "solomon "(env!("CARGO_PKG_VERSION")) }
-                lastBuildDate { (now().to_rfc2822()) }
+                lastBuildDate { (Utc::now().to_rfc2822()) }
                 language { "zh-Hans" }
                 copyright { "Content licensed under CC-BY-SA-4.0." }
                 @for post in posts {
@@ -52,10 +50,6 @@ pub async fn rss() -> Response {
         ),
     )
     .unwrap();
-}
-
-fn now() -> DateTime<Utc> {
-    DateTime::<Utc>::from(UNIX_EPOCH + Duration::from_millis(Date::new_0().get_time() as u64))
 }
 
 fn to_datetime(date: NaiveDate) -> DateTime<Utc> {

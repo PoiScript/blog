@@ -10,7 +10,7 @@ publish = false
 repository = "https://github.com/PoiScript/solomon"
 
 [dependencies]
-chrono = "0.4.19"
+chrono = { version = "0.4.19", default-features = false, features = ["std", "clock", "wasmbind"] }
 console_error_panic_hook = "0.1.6"
 js-sys = "0.3.47"
 maud = "0.22.2"
