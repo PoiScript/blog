@@ -1,6 +1,5 @@
 const path = require("path");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const WasmPackPlugin = require("@wasm-tool/wasm-pack-plugin");
 
 const dist = path.resolve(__dirname, "../dist");
 const web = path.resolve(__dirname, "../web");
@@ -25,12 +24,5 @@ module.exports = {
       },
     ],
   },
-  plugins: [
-    new WasmPackPlugin({
-      crateDirectory: __dirname,
-      outName: "solomon",
-      extraArgs: "--target nodejs -- --no-default-features --features=nodejs",
-    }),
-    new MiniCssExtractPlugin({}),
-  ],
+  plugins: [new MiniCssExtractPlugin({})],
 };

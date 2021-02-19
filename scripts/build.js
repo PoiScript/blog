@@ -1,6 +1,6 @@
 const webpack = require("webpack");
-const which = require("which");
-const { spawn } = require("child_process");
+
+const { runWasmPack } = require("./wasm-pack");
 
 // run webpack and expose emitted assets
 const runWebpack = () =>
@@ -16,48 +16,15 @@ const runWebpack = () =>
     });
   });
 
-const runWasmPack = (env) =>
-  new Promise((resolve, reject) => {
-    const bin = which.sync("wasm-pack");
-
-    const p = spawn(
-      bin,
-      [
-        "build",
-        "--target",
-        "no-modules",
-        "--",
-        "--no-default-features",
-        "--features=workers",
-      ],
-      {
-        stdio: "inherit",
-        env: { ...process.env, ...env },
-      }
-    );
-
-    p.on("close", (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error("compilation error"));
-      }
-    });
-
-    p.on("error", reject);
-  });
-
 const main = async () => {
   const assets = await runWebpack();
   await runWasmPack({
-    JS_URL: assets
-      .filter((s) => s.endsWith(".js"))
-      .map((s) => `/assets/${s}`)
-      .join(","),
-    CSS_URL: assets
-      .filter((s) => s.endsWith(".css"))
-      .map((s) => `/assets/${s}`)
-      .join(","),
+    target: "no-modules",
+    features: "workers",
+    env: {
+      JS_URL: assets.filter((s) => s.endsWith(".js")).join(","),
+      CSS_URL: assets.filter((s) => s.endsWith(".css")).join(","),
+    },
   });
 };
 
