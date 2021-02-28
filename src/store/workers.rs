@@ -17,17 +17,19 @@ extern "C" {
 }
 
 pub async fn list_keys(prefix: &str) -> JsValue {
-    let opt = Object::new();
+    unsafe {
+        let opt = Object::new();
 
-    Reflect::set(
-        &opt,
-        &JsValue::from_str("prefix"),
-        &JsValue::from_str(prefix),
-    )
-    .unwrap();
-    let value = JsFuture::from(kv_list(&opt)).await.unwrap();
+        Reflect::set(
+            &opt,
+            &JsValue::from_str("prefix"),
+            &JsValue::from_str(prefix),
+        )
+        .unwrap();
+        let value = JsFuture::from(kv_list(&opt)).await.unwrap();
 
-    Reflect::get(&value, &JsValue::from_str("keys")).unwrap()
+        Reflect::get(&value, &JsValue::from_str("keys")).unwrap()
+    }
 }
 
 pub async fn get_posts_list() -> Vec<Post> {
@@ -78,8 +80,29 @@ pub async fn get_posts_list() -> Vec<Post> {
 
 pub async fn get_assets(name: &str) -> ArrayBuffer {
     unsafe {
-        let value = JsFuture::from(kv_get_2(name, "arrayBuffer")).await.unwrap();
+        JsFuture::from(kv_get_2(name, "arrayBuffer"))
+            .await
+            .unwrap()
+            .into()
+    }
+}
 
-        value.into()
+pub async fn get_style() -> String {
+    unsafe {
+        JsFuture::from(kv_get_1(env!("CSS_URL")))
+            .await
+            .unwrap()
+            .as_string()
+            .unwrap()
+    }
+}
+
+pub async fn get_about() -> String {
+    unsafe {
+        JsFuture::from(kv_get_1("_org_about"))
+            .await
+            .unwrap()
+            .as_string()
+            .unwrap()
     }
 }

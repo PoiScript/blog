@@ -4,6 +4,7 @@ use web_sys::*;
 use super::AmpPage;
 use crate::constants::LINKS;
 use crate::partials::title_section;
+use crate::utils::html_response;
 
 pub async fn link() -> Response {
     let amp = AmpPage {
@@ -19,7 +20,7 @@ pub async fn link() -> Response {
                             width="40"
                             height="40"
                             layout="responsive"
-                            alt={ "avatar for "(link.2) };
+                            alt={ "avatar for "(link.2) } { }
                         .text {
                             .title { (link.2) }
                         }
@@ -29,14 +30,5 @@ pub async fn link() -> Response {
         },
     };
 
-    return Response::new_with_opt_str_and_init(
-        Some(&amp.render().into_string()),
-        ResponseInit::new().status(200).headers(
-            &headers!(
-                "content-type" => "text/html; charset=utf-8"
-            )
-            .into(),
-        ),
-    )
-    .unwrap();
+    html_response(&amp.render().into_string())
 }

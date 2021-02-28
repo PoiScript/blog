@@ -7,7 +7,7 @@ const runWebpack = () =>
   new Promise((resolve, reject) => {
     const config = require("./webpack.config.prod");
 
-    webpack(config).run((err, stats) => {
+    webpack(config, (err, stats) => {
       if (err) {
         reject(err);
       } else {

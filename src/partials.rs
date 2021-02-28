@@ -1,7 +1,4 @@
-use std::fmt::Write;
-
 use maud::{html, Markup, Render};
-use orgize::Org;
 
 use crate::post::UpNext;
 
@@ -145,7 +142,7 @@ pub fn footer() -> Markup {
 pub fn style() -> Markup {
     html! {
         @if let Some(url) = option_env!("CSS_URL") {
-            link rel="stylesheet" href=(url);
+            link rel="stylesheet" href={ "/assets/"(url) };
         } @else {
             link rel="stylesheet" href="/assets/main.css";
         }
@@ -155,19 +152,9 @@ pub fn style() -> Markup {
 pub fn script() -> Markup {
     html! {
         @if let Some(url) = option_env!("JS_URL") {
-            script src=(url) {}
+            script src={ "/assets/"(url) } {}
         } @else {
             script src="/assets/main.js" {}
         }
-    }
-}
-
-pub struct OrgHtml<'a>(pub &'a str);
-
-impl<'a> Render for OrgHtml<'a> {
-    fn render_to(&self, buffer: &mut String) {
-        let _ = buffer.write_str("<![CDATA[");
-        let _ = Org::parse(&self.0).write_html(unsafe { &mut buffer.as_mut_vec() });
-        let _ = buffer.write_str("]]>");
     }
 }

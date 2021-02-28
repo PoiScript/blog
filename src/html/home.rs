@@ -3,6 +3,7 @@ use web_sys::*;
 
 use super::HtmlPage;
 use crate::store::get_posts_list;
+use crate::utils::html_response;
 
 pub async fn home() -> Response {
     let posts = get_posts_list().await;
@@ -13,20 +14,17 @@ pub async fn home() -> Response {
             @for post in posts {
                 ."post-item" {
                     a.title href={ "/post/"(post.slug) } { (post.title) }
-                    .subtitle { "2018/08/14 · #emacs #org-mode" }
+                    .subtitle {
+                        (post.published.format("%F"))
+                        " ·"
+                        @for tag in post.tags {
+                            " #" (tag)
+                        }
+                    }
                 }
             }
         },
     };
 
-    return Response::new_with_opt_str_and_init(
-        Some(&html.render().into_string()),
-        ResponseInit::new().status(200).headers(
-            &headers!(
-                "content-type" => "text/html; charset=utf-8"
-            )
-            .into(),
-        ),
-    )
-    .unwrap();
+    html_response(&html.render().into_string())
 }

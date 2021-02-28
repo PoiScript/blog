@@ -1,9 +1,20 @@
 use chrono::{DateTime, NaiveDate, Utc};
-use maud::html;
+use maud::{html, Render};
+use orgize::Org;
+use std::fmt::Write;
 use web_sys::*;
 
-use crate::partials::OrgHtml;
 use crate::store::get_posts_list;
+
+pub struct OrgHtml<'a>(pub &'a str);
+
+impl<'a> Render for OrgHtml<'a> {
+    fn render_to(&self, buffer: &mut String) {
+        let _ = buffer.write_str("<![CDATA[");
+        let _ = Org::parse(&self.0).write_html(unsafe { &mut buffer.as_mut_vec() });
+        let _ = buffer.write_str("]]>");
+    }
+}
 
 pub async fn rss() -> Response {
     let posts = get_posts_list().await;

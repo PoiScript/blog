@@ -48,6 +48,16 @@ impl HtmlHandler<Error> for SolomonBaseHandler {
                     write!(w, "{}", Escape(text))?;
                 }
             }
+            Element::InlineSrc(inline_src) => write!(
+                w,
+                r#"<code class="lang-{}">{}</code>"#,
+                &inline_src.lang, &inline_src.body,
+            )?,
+            Element::SourceBlock(block) => write!(
+                w,
+                r#"<pre><code class="lang-{}">{}</code></pre>"#,
+                &block.language, &block.contents
+            )?,
             Element::Verbatim { value } | Element::Code { value } => {
                 let text = value.trim();
                 if should_insert_space(self.last_char, text.chars().next()) {

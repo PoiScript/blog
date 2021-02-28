@@ -1,10 +1,10 @@
-use maud::{html, PreEscaped, Render};
-use orgize::Org;
+use maud::{html, Render};
 use web_sys::*;
 
-use super::AmpPage;
+use super::{AmpPage, OrgAmp};
 use crate::partials::{title_section, up_next};
 use crate::store::get_posts_list;
+use crate::utils::{html_response, redirect_404_response};
 
 pub async fn post(slug: &str) -> Response {
     let posts = get_posts_list().await;
@@ -12,44 +12,28 @@ pub async fn post(slug: &str) -> Response {
     let post = posts.into_iter().find(|p| p.slug == slug);
 
     if let Some(post) = post {
-        let org = Org::parse(&post.content);
-
-        let mut output = Vec::new();
-
-        org.write_html(&mut output).unwrap_or_default();
-
-        let output = String::from_utf8_lossy(&output);
+        let subtitle = html! {
+            (post.published.format("%F"))
+            " ·"
+            @for tag in post.tags {
+                " #" (tag)
+            }
+        }
+        .render()
+        .into_string();
 
         let amp = AmpPage {
             title: &post.title,
             canonical: "/",
             main: html! {
-                ( title_section(&post.title, None) )
-                article { (PreEscaped(output)) }
+                ( title_section(&post.title, Some(&subtitle)) )
+                article { (OrgAmp(&post.content)) }
                 ( up_next(post.prev, post.next) )
             },
         };
 
-        Response::new_with_opt_str_and_init(
-            Some(&amp.render().into_string()),
-            ResponseInit::new().status(200).headers(
-                &headers!(
-                    "content-type" => "text/html; charset=utf-8"
-                )
-                .into(),
-            ),
-        )
-        .unwrap()
+        html_response(&amp.render().into_string())
     } else {
-        Response::new_with_opt_str_and_init(
-            Some("Redirecting to /404"),
-            ResponseInit::new().status(302).headers(
-                &headers!(
-                    "location" => "/404"
-                )
-                .into(),
-            ),
-        )
-        .unwrap()
+        redirect_404_response()
     }
 }

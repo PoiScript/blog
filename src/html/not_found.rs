@@ -3,6 +3,7 @@ use web_sys::*;
 
 use super::HtmlPage;
 use crate::partials::title_section;
+use crate::utils::html_response;
 
 pub async fn not_found() -> Response {
     let html = HtmlPage {
@@ -13,14 +14,5 @@ pub async fn not_found() -> Response {
         },
     };
 
-    return Response::new_with_opt_str_and_init(
-        Some(&html.render().into_string()),
-        ResponseInit::new().status(200).headers(
-            &headers!(
-                "content-type" => "text/html; charset=utf-8"
-            )
-            .into(),
-        ),
-    )
-    .unwrap();
+    html_response(&html.render().into_string())
 }

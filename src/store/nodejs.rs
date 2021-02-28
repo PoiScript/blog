@@ -3,7 +3,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::JsFuture;
 
-use crate::post::Post;
+use crate::post::{Post, UpNext};
 
 #[wasm_bindgen(module = fs)]
 extern "C" {
@@ -15,6 +15,16 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = promises, js_name = "readFile")]
     fn read_file_2(path: JsString, opts: &str) -> Promise;
+}
+
+pub async fn get_about() -> String {
+    unsafe {
+        JsFuture::from(read_file_2(JsString::from("content/about.org"), "utf-8"))
+            .await
+            .unwrap()
+            .as_string()
+            .unwrap()
+    }
 }
 
 pub async fn get_posts_list() -> Vec<Post> {
@@ -39,15 +49,26 @@ pub async fn get_posts_list() -> Vec<Post> {
         .await
         .unwrap();
 
-        let mut res = try_iter(&posts)
+        let mut posts = try_iter(&posts)
             .unwrap()
             .unwrap()
             .filter_map(|value| Post::from(&value.unwrap().as_string().unwrap()))
             .collect::<Vec<_>>();
 
-        res.sort_by(|a, b| b.published.cmp(&a.published));
+        posts.sort_by(|a, b| b.published.cmp(&a.published));
 
-        res
+        for index in 0..posts.len() - 1 {
+            posts[index].next = Some(UpNext {
+                title: posts[index + 1].title.clone(),
+                slug: posts[index + 1].slug.clone(),
+            });
+            posts[index + 1].prev = Some(UpNext {
+                title: posts[index].title.clone(),
+                slug: posts[index].slug.clone(),
+            });
+        }
+
+        posts
     }
 }
 
@@ -60,5 +81,13 @@ pub async fn get_assets(name: &str) -> ArrayBuffer {
         .unwrap();
 
         Uint8Array::from(buffer).buffer()
+    }
+}
+
+pub async fn get_css() -> String {
+    unsafe {
+        JsValue::from(&read_file_2(JsString::from("dist/main.css"), "utf-8"))
+            .as_string()
+            .unwrap()
     }
 }

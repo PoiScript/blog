@@ -10,8 +10,24 @@ pub use link::*;
 pub use not_found::*;
 pub use post::*;
 
-use crate::partials::{footer, header, script, style, title};
 use maud::{html, Markup, Render, DOCTYPE};
+use orgize::Org;
+
+use crate::handlers::SolomonHtmlHandler;
+use crate::partials::{footer, header, script, style, title};
+
+pub struct OrgHtml<'a>(pub &'a str);
+
+impl<'a> Render for OrgHtml<'a> {
+    fn render_to(&self, buffer: &mut String) {
+        let org = Org::parse(&self.0);
+
+        let _ = org.write_html_custom(
+            unsafe { &mut buffer.as_mut_vec() },
+            &mut SolomonHtmlHandler::default(),
+        );
+    }
+}
 
 pub struct HtmlPage<'a> {
     title: &'a str,
