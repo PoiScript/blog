@@ -8,6 +8,7 @@ use crate::utils::html_response;
 pub async fn not_found() -> Response {
     let html = HtmlPage {
         title: "Not Found",
+        amphtml: None,
         main: html! {
             (title_section("Not Found", None))
             "Not Found"

@@ -9,6 +9,7 @@ use crate::utils::html_response;
 pub async fn link() -> Response {
     let html = HtmlPage {
         title: "Link",
+        amphtml: Some("/amp/link"),
         main: html! {
             (title_section("Link", None))
             ."link-list" {

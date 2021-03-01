@@ -8,11 +8,12 @@ pub use home::*;
 pub use link::*;
 pub use post::*;
 
+use json::JsonValue;
 use maud::{html, Markup, PreEscaped, Render, DOCTYPE};
 use orgize::Org;
 
 use crate::handlers::SolomonHtmlHandler;
-use crate::partials::{footer, header};
+use crate::partials::{footer, header, title};
 
 pub struct OrgAmp<'a>(pub &'a str);
 
@@ -30,6 +31,8 @@ impl<'a> Render for OrgAmp<'a> {
 pub struct AmpPage<'a> {
     title: &'a str,
     canonical: &'a str,
+    custom_css: &'a str,
+    schema: JsonValue,
     main: Markup,
 }
 
@@ -37,25 +40,31 @@ impl<'a> Render for AmpPage<'a> {
     fn render(&self) -> Markup {
         html! {
             (DOCTYPE)
-            html amp? lang="zh-Hans" i-amphtml-layout? i-amphtml-no-boilerplate? transformed="self;v=1" {
+            html amp? lang="zh-Hans" {
                 head {
                     meta charset="utf-8";
-                    style amp-runtime? i-amphtml-version="011909181902540" {
-                        // (PreEscaped(include_str!("../etc/amp-runtime.011909181902540.css")))
-                    }
-                    link rel="preload" href="https://cdn.ampproject.org/v0.js" as="script";
+                    script async src="https://cdn.ampproject.org/v0.js" { }
+                    (title(self.title))
+                    link rel="canonical" href={ "https://blog.poi.cat" (self.canonical) };
+                    meta name="description" content="PoiScript's Blog";
                     meta name="viewport" content="width=device-width,minimum-scale=1";
-                    script async? src="https://cdn.ampproject.org/v0.js" {  }
+                    meta name="application-name" content="solomon";
+                    meta name="theme-color" content="#673ab7";
+                    meta name="apple-mobile-web-app-title" content="solomon";
+                    meta name="apple-mobile-web-app-capable" content="yes";
+                    meta name="apple-mobile-web-app-status-bar-style" content="black";
+                    link rel="apple-touch-icon" sizes="120x120" href="/assets/favicon/touch-icon.png";
+                    link rel="shortcut icon" sizes="32x32" href="/assets/favicon/favicon.ico";
+                    link rel="icon" sizes="192x192" href="/assets/favicon/favicon-192x192.png";
+                    (PreEscaped(include_str!("./boilerplate.html")))
                     style amp-custom? {
-                        (PreEscaped(include_str!("../../dist/main.css")))
+                        (PreEscaped(self.custom_css))
                     }
-                    link rel="canonical" href={ "https://blog.poi.cat/post/" (self.canonical) };
-                    title { (self.title) "☆Solomon" }
                     script type="application/ld+json" {
-                        // (PreEscaped(json.to_string()))
+                        (self.schema.dump())
                     }
                 }
-                body {
+                body.root {
                     (header())
                     main.main {
                         (self.main)

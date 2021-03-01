@@ -5,25 +5,32 @@ use crate::store::get_assets;
 fn get_content_type(name: &str) -> Headers {
     match name.rsplit('.').next() {
         Some("js") => headers! {
-            "content-type" => "text/javascript; charset=utf-8"
+            "content-type" => "text/javascript; charset=utf-8",
+            "cache-control" => "public, max-age=31536000, immutable"
         },
         Some("gpg") => headers! {
-            "content-type" => "text/plain; charset=utf-8"
+            "content-type" => "text/plain; charset=utf-8",
+            "cache-control" => "no-cache"
         },
         Some("css") => headers! {
-            "content-type" => "text/css; charset=utf-8"
+            "content-type" => "text/css; charset=utf-8",
+            "cache-control" => "public, max-age=31536000, immutable"
         },
         Some("jpg") | Some("jpeg") => headers! {
-            "content-type" => "image/jpeg"
+            "content-type" => "image/jpeg",
+            "cache-control" => "public, max-age=31536000, immutable"
         },
         Some("png") => headers! {
-            "content-type" => "image/png"
+            "content-type" => "image/png",
+            "cache-control" => "public, max-age=31536000, immutable"
         },
         Some("ico") => headers! {
-            "content-type" => "image/vnd.microsoft.icon"
+            "content-type" => "image/x-icon",
+            "cache-control" => "public, max-age=31536000, immutable"
         },
         Some("svg") => headers! {
-            "content-type" => "image/svg+xml"
+            "content-type" => "image/svg+xml",
+            "cache-control" => "public, max-age=31536000, immutable"
         },
         _ => headers! {
             "content-type" => "application/octet-stream"

@@ -1,14 +1,15 @@
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::Utc;
 use maud::{html, Render};
 use orgize::Org;
 use std::fmt::Write;
 use web_sys::*;
 
 use crate::store::get_posts_list;
+use crate::utils::to_datetime;
 
-pub struct OrgHtml<'a>(pub &'a str);
+pub struct OrgRss<'a>(pub &'a str);
 
-impl<'a> Render for OrgHtml<'a> {
+impl<'a> Render for OrgRss<'a> {
     fn render_to(&self, buffer: &mut String) {
         let _ = buffer.write_str("<![CDATA[");
         let _ = Org::parse(&self.0).write_html(unsafe { &mut buffer.as_mut_vec() });
@@ -44,7 +45,7 @@ pub async fn rss() -> Response {
                             category { (tag) }
                         }
                         pubDate { (to_datetime(post.published).to_rfc2822()) }
-                        description { ( OrgHtml(&post.content) ) }
+                        description { ( OrgRss(&post.content) ) }
                     }
                 }
             }
@@ -61,8 +62,4 @@ pub async fn rss() -> Response {
         ),
     )
     .unwrap();
-}
-
-fn to_datetime(date: NaiveDate) -> DateTime<Utc> {
-    DateTime::<Utc>::from_utc(date.and_hms(0, 0, 0), Utc)
 }

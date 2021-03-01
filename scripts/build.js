@@ -22,8 +22,8 @@ const main = async () => {
     target: "no-modules",
     features: "workers",
     env: {
-      JS_URL: assets.filter((s) => s.endsWith(".js")).join(","),
-      CSS_URL: assets.filter((s) => s.endsWith(".css")).join(","),
+      JS_URL: assets.find((s) => s.endsWith(".js")),
+      CSS_URL: assets.find((s) => s.endsWith(".css")),
     },
   });
 };

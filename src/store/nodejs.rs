@@ -17,13 +17,15 @@ extern "C" {
     fn read_file_2(path: JsString, opts: &str) -> Promise;
 }
 
-pub async fn get_about() -> String {
+pub async fn get_about() -> Post {
     unsafe {
-        JsFuture::from(read_file_2(JsString::from("content/about.org"), "utf-8"))
+        let s = JsFuture::from(read_file_2(JsString::from("content/about.org"), "utf-8"))
             .await
             .unwrap()
             .as_string()
-            .unwrap()
+            .unwrap();
+
+        Post::from(&s).unwrap()
     }
 }
 
@@ -86,7 +88,9 @@ pub async fn get_assets(name: &str) -> ArrayBuffer {
 
 pub async fn get_css() -> String {
     unsafe {
-        JsValue::from(&read_file_2(JsString::from("dist/main.css"), "utf-8"))
+        JsFuture::from(read_file_2(JsString::from("dist/main.css"), "utf-8"))
+            .await
+            .unwrap()
             .as_string()
             .unwrap()
     }

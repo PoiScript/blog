@@ -1,9 +1,11 @@
+use chrono::{DateTime, NaiveDate, Utc};
 use web_sys::*;
 
 macro_rules! headers(
     { $($key:expr => $value:expr),+ } => {
         {
             let headers = ::web_sys::Headers::new().unwrap();
+            headers.set("x-content-type-options", "nosniff").unwrap();
             $(
                 headers.set($key, $value).unwrap();
             )+
@@ -18,7 +20,8 @@ pub fn html_response(body: &str) -> Response {
         Some(body),
         ResponseInit::new().status(200).headers(
             &headers!(
-                "content-type" => "text/html; charset=utf-8"
+                "content-type" => "text/html; charset=utf-8",
+                "cache-control" => "no-cache"
             )
             .into(),
         ),
@@ -38,4 +41,8 @@ pub fn redirect_404_response() -> Response {
         ),
     )
     .unwrap()
+}
+
+pub fn to_datetime(date: NaiveDate) -> DateTime<Utc> {
+    DateTime::<Utc>::from_utc(date.and_hms(0, 0, 0), Utc)
 }

@@ -10,6 +10,7 @@ pub async fn home() -> Response {
 
     let html = HtmlPage {
         title: "Home",
+        amphtml: Some("/amp"),
         main: html! {
             @for post in posts {
                 ."post-item" {

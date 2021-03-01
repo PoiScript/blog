@@ -31,6 +31,7 @@ impl<'a> Render for OrgHtml<'a> {
 
 pub struct HtmlPage<'a> {
     title: &'a str,
+    amphtml: Option<&'a str>,
     main: Markup,
 }
 
@@ -38,10 +39,13 @@ impl<'a> Render for HtmlPage<'a> {
     fn render(&self) -> Markup {
         html! {
             (DOCTYPE)
-            html {
+            html lang="zh-Hans" {
                 head {
                     meta charset="utf-8";
                     (title(self.title))
+                    @if let Some(amphtml) = self.amphtml {
+                        link rel="amphtml" href={ "https://blog.poi.cat" (amphtml) };
+                    }
                     meta name="description" content="PoiScript's Blog";
                     meta name="viewport" content="width=device-width,initial-scale=1";
                     meta name="application-name" content="solomon";
@@ -55,7 +59,7 @@ impl<'a> Render for HtmlPage<'a> {
                     (style())
                     (script())
                 }
-                body {
+                body.root {
                     (header())
                     main.main { (self.main) }
                     (footer())

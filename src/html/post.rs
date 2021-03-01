@@ -22,8 +22,11 @@ pub async fn post(slug: &str) -> Response {
         .render()
         .into_string();
 
+        let amphtml = format!("/amp/post/{}", post.slug);
+
         let html = HtmlPage {
             title: &post.title,
+            amphtml: Some(&amphtml),
             main: html! {
                 ( title_section(&post.title, Some(&subtitle)) )
                 article { (OrgHtml(&post.content)) }

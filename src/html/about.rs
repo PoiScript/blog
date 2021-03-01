@@ -11,9 +11,10 @@ pub async fn about() -> Response {
 
     let html = HtmlPage {
         title: "About",
+        amphtml: Some("/amp/about"),
         main: html! {
-            ( title_section("About", None) )
-            article { (OrgHtml(&post)) }
+            ( title_section("About", Some(&post.published.format("%F").to_string())) )
+            article { (OrgHtml(&post.content)) }
         },
     };
 
