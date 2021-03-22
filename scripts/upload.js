@@ -36,15 +36,14 @@ async function walk(dir) {
 
 const uploadContent = async () => {
   const files = await walk(content);
+
   const body = await Promise.all(
     files
       .filter((filePath) => filePath.endsWith(".org"))
-      .map(async (filePath) => {
-        return {
-          key: `_org_${path.relative(content, filePath).slice(0, -4)}`,
-          value: await fs.readFile(filePath, "utf-8"),
-        };
-      })
+      .map(async (filePath) => ({
+        key: `_org_${path.relative(content, filePath).slice(0, -4)}`,
+        value: await fs.readFile(filePath, "utf-8"),
+      }))
   );
 
   const res = await fetch(
@@ -71,13 +70,11 @@ const uploadStatic = async (dir) => {
   const files = await walk(dir);
 
   const body = await Promise.all(
-    files.map(async (filePath) => {
-      return {
-        key: path.relative(dir, filePath),
-        base64: true,
-        value: (await fs.readFile(filePath)).toString("base64"),
-      };
-    })
+    files.map(async (filePath) => ({
+      key: path.relative(dir, filePath),
+      base64: true,
+      value: (await fs.readFile(filePath)).toString("base64"),
+    }))
   );
 
   const res = await fetch(

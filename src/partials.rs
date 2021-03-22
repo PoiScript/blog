@@ -1,6 +1,18 @@
 use maud::{html, Markup, Render};
+use wasm_bindgen::prelude::*;
 
 use crate::post::UpNext;
+
+#[wasm_bindgen]
+extern "C" {
+    type Global;
+
+    #[wasm_bindgen(getter, static_method_of = Global, js_class = globalThis, js_name = CSS_ASSET)]
+    fn css_asset() -> JsValue;
+
+    #[wasm_bindgen(getter, static_method_of = Global, js_class = globalThis, js_name = JS_ASSET)]
+    fn js_asset() -> JsValue;
+}
 
 pub struct Meta<'a>(&'a str, &'a str);
 
@@ -140,21 +152,17 @@ pub fn footer() -> Markup {
 }
 
 pub fn style() -> Markup {
+    let url = Global::css_asset();
+
     html! {
-        @if let Some(url) = option_env!("CSS_URL") {
-            link rel="stylesheet" href={ "/assets/"(url) };
-        } @else {
-            link rel="stylesheet" href="/assets/main.css";
-        }
+        link rel="stylesheet" href={"/assets/"(url.as_string().unwrap())};
     }
 }
 
 pub fn script() -> Markup {
+    let url = Global::js_asset();
+
     html! {
-        @if let Some(url) = option_env!("JS_URL") {
-            script src={ "/assets/"(url) } {}
-        } @else {
-            script src="/assets/main.js" {}
-        }
+        script src={"/assets/"(url.as_string().unwrap())} {}
     }
 }

@@ -7,13 +7,21 @@ use crate::post::{Post, UpNext};
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = SOLOMON_KV, js_name = "get")]
-    fn kv_get_1(key: &str) -> Promise;
+    fn kv_get_1(key: JsValue) -> Promise;
 
     #[wasm_bindgen(js_namespace = SOLOMON_KV, js_name = "get")]
     fn kv_get_2(key: &str, ty: &str) -> Promise;
 
     #[wasm_bindgen(js_namespace = SOLOMON_KV, js_name = "list")]
     fn kv_list(opt: &JsValue) -> Promise;
+}
+
+#[wasm_bindgen]
+extern "C" {
+    type Global;
+
+    #[wasm_bindgen(getter, static_method_of = Global, js_class = globalThis, js_name = CSS_ASSET)]
+    fn css_asset() -> JsValue;
 }
 
 pub async fn get_posts_list() -> Vec<Post> {
@@ -37,7 +45,7 @@ pub async fn get_posts_list() -> Vec<Post> {
         for key in iter {
             let key = key.unwrap();
             let key = Reflect::get(&key, &JsValue::from_str("name")).unwrap();
-            promises.push(&kv_get_1(&key.as_string().unwrap()));
+            promises.push(&kv_get_1(key));
         }
 
         let posts = JsFuture::from(Promise::all(&promises)).await.unwrap();
@@ -83,7 +91,7 @@ pub async fn get_assets(name: &str) -> ArrayBuffer {
 
 pub async fn get_css() -> String {
     unsafe {
-        JsFuture::from(kv_get_1(env!("CSS_URL")))
+        JsFuture::from(kv_get_1(Global::css_asset()))
             .await
             .unwrap()
             .as_string()
@@ -93,7 +101,7 @@ pub async fn get_css() -> String {
 
 pub async fn get_about() -> Post {
     unsafe {
-        let s = JsFuture::from(kv_get_1("_org_about"))
+        let s = JsFuture::from(kv_get_1(JsValue::from("_org_about")))
             .await
             .unwrap()
             .as_string()

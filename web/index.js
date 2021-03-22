@@ -1,5 +1,5 @@
 import "./index.less";
-import "prismjs/themes/prism.css"
+import "prismjs/themes/prism.css";
 
 import Prism from "prismjs";
 import "prismjs/components/prism-bash";

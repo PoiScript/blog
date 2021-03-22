@@ -37,8 +37,5 @@ nodejs = []
 [profile.release]
 lto = true
 
-[package.metadata.wasm-pack.profile.dev]
-wasm-opt = false
-
 [lib]
 crate-type = ["cdylib", "rlib"]

@@ -1,10 +1,13 @@
 // fetch polyfill
 const fetch = require("node-fetch");
 
-global.Request = fetch.Request;
-global.Response = fetch.Response;
-global.Headers = fetch.Headers;
+globalThis.Request = fetch.Request;
+globalThis.Response = fetch.Response;
+globalThis.Headers = fetch.Headers;
 // fetch polyfill ends here
+
+globalThis.JS_ASSET= "main.js";
+globalThis.CSS_ASSET= "main.css";
 
 const express = require("express");
 const webpack = require("webpack");

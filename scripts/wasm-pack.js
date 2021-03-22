@@ -29,14 +29,12 @@ const runWasmPack = (opts) =>
         "build",
         "--target",
         opts.target,
+        ...(opts.dev ? ["--dev"] : []),
         "--",
         "--no-default-features",
         `--features=${opts.features}`,
       ],
-      {
-        stdio: "inherit",
-        env: { ...process.env, ...(opts.env || {}) },
-      }
+      { stdio: "inherit" }
     );
 
     p.on("close", (code) => {

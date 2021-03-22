@@ -17,6 +17,14 @@ extern "C" {
     fn read_file_2(path: JsString, opts: &str) -> Promise;
 }
 
+#[wasm_bindgen]
+extern "C" {
+    type Global;
+
+    #[wasm_bindgen(getter, static_method_of = Global, js_class = globalThis, js_name = CSS_ASSET)]
+    fn css_asset() -> JsValue;
+}
+
 pub async fn get_about() -> Post {
     unsafe {
         let s = JsFuture::from(read_file_2(JsString::from("content/about.org"), "utf-8"))
@@ -88,10 +96,13 @@ pub async fn get_assets(name: &str) -> ArrayBuffer {
 
 pub async fn get_css() -> String {
     unsafe {
-        JsFuture::from(read_file_2(JsString::from("dist/main.css"), "utf-8"))
-            .await
-            .unwrap()
-            .as_string()
-            .unwrap()
+        JsFuture::from(read_file_2(
+            JsString::from("dist/").concat(&Global::css_asset()),
+            "utf-8",
+        ))
+        .await
+        .unwrap()
+        .as_string()
+        .unwrap()
     }
 }
