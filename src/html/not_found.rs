@@ -1,11 +1,13 @@
 use maud::{html, Render};
-use web_sys::*;
+use wasm_bindgen::prelude::*;
 
 use super::HtmlPage;
 use crate::partials::title_section;
-use crate::utils::html_response;
 
-pub async fn not_found() -> Response {
+#[wasm_bindgen(js_name = htmlNotFound)]
+pub fn html_not_found() -> String {
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
     let html = HtmlPage {
         title: "Not Found",
         amphtml: None,
@@ -15,5 +17,5 @@ pub async fn not_found() -> Response {
         },
     };
 
-    html_response(&html.render().into_string())
+    html.render().0
 }

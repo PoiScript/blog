@@ -1,22 +1,22 @@
 use maud::{html, Render};
-use web_sys::*;
+use wasm_bindgen::prelude::*;
 
 use super::{HtmlPage, OrgHtml};
 use crate::partials::title_section;
-use crate::store::get_about;
-use crate::utils::html_response;
+use crate::Store;
 
-pub async fn about() -> Response {
-    let post = get_about().await;
+#[wasm_bindgen(js_name = htmlAbout)]
+pub fn html_about(store: Store) -> Result<String, JsValue> {
+    let post = &store.get_about()?;
 
     let html = HtmlPage {
         title: "About",
         amphtml: Some("/amp/about"),
         main: html! {
             ( title_section("About", Some(&post.published.format("%F").to_string())) )
-            article { (OrgHtml(&post.content)) }
+            article { (OrgHtml::new(&post.content, &store)) }
         },
     };
 
-    html_response(&html.render().into_string())
+    Ok(html.render().0)
 }

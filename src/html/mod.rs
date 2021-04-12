@@ -11,21 +11,69 @@ pub use not_found::*;
 pub use post::*;
 
 use maud::{html, Markup, Render, DOCTYPE};
-use orgize::Org;
+use orgize::{export::HtmlHandler, Element, Event, Org};
+use std::borrow::Cow;
+use std::io::Write;
 
-use crate::handlers::SolomonHtmlHandler;
 use crate::partials::{footer, header, script, style, title};
+use crate::{handlers::SolomonBaseHandler, Store};
 
-pub struct OrgHtml<'a>(pub &'a str);
+pub struct OrgHtml<'a> {
+    pub content: &'a str,
+    pub store: &'a Store,
+}
+
+impl<'a> OrgHtml<'a> {
+    fn new(content: &'a str, store: &'a Store) -> Self {
+        OrgHtml { content, store }
+    }
+}
 
 impl<'a> Render for OrgHtml<'a> {
     fn render_to(&self, buffer: &mut String) {
-        let org = Org::parse(&self.0);
+        let org = Org::parse(&self.content);
+        let mut handler = SolomonBaseHandler::default();
 
-        let _ = org.write_html_custom(
-            unsafe { &mut buffer.as_mut_vec() },
-            &mut SolomonHtmlHandler::default(),
-        );
+        let mut writer = unsafe { buffer.as_mut_vec() };
+
+        for event in org.iter() {
+            match event {
+                Event::Start(Element::Link(link)) if link.path.starts_with("file:") => {
+                    let path = &link.path[5..];
+                    let alt = link.desc.as_ref().unwrap_or_else(|| &Cow::Borrowed(""));
+
+                    let size = path
+                        .strip_prefix("/assets/")
+                        .and_then(|key| self.store.get_size(key));
+
+                    if let Some((width, height)) = size {
+                        let _ = write!(
+                            &mut writer,
+                            "<div class=\"image-container\">\
+                            <div class=\"image-wrapper\">\
+                            <img alt=\"{}\" width=\"{}\" height=\"{}\" src=\"{}\" loading=\"lazy\"/>\
+                            </div></div>",
+                            alt, width, height, path
+                        );
+                    } else {
+                        let _ = write!(
+                            &mut writer,
+                            "<div class=\"image-container\">\
+                            <div class=\"image-wrapper\">\
+                            <img alt=\"{}\" src=\"{}\" loading=\"lazy\"/>\
+                            </div></div>",
+                            alt, path
+                        );
+                    }
+                }
+                Event::Start(element) => {
+                    let _ = handler.start(&mut writer, element);
+                }
+                Event::End(element) => {
+                    let _ = handler.end(&mut writer, element);
+                }
+            }
+        }
     }
 }
 

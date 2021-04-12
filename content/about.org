@@ -5,10 +5,6 @@
 
 * poi
 
-林培奇（Alex Lin），17 岁零 {{{age-days}}} 天。
-
-我的联系方式：
-
 - Email: ~poiscript at gmail dot com~
 
 - Email: ~poiscript at live dot com~
@@ -40,6 +36,3 @@ solomon 是我的博客的名字，同时也是该博客框架的名字。
 
 solomon 以 MIT 协议开源，项目地址：[[https://github.com/PoiScript/solomon]]；文章在
 知识共享 署名-相同方式共享 4.0协议（CC-BY-SA-4.0）下提供。
-
-solomon 基于 {{{angular-core-version}}} 和 {{{angular-material-version}}} 开发，
-使用 {{{angular-cli-version}}} 构建。

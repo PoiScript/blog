@@ -1,18 +1,18 @@
 use maud::{html, Render};
-use web_sys::*;
+use wasm_bindgen::prelude::*;
 
 use super::HtmlPage;
-use crate::store::get_posts_list;
-use crate::utils::html_response;
+use crate::Store;
 
-pub async fn home() -> Response {
-    let posts = get_posts_list().await;
+#[wasm_bindgen(js_name = htmlHome)]
+pub fn html_home(store: Store) -> String {
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
     let html = HtmlPage {
         title: "Home",
         amphtml: Some("/amp"),
         main: html! {
-            @for post in posts {
+            @for post in store.posts {
                 ."post-item" {
                     a.title href={ "/post/"(post.slug) } { (post.title) }
                     .subtitle {
@@ -27,5 +27,5 @@ pub async fn home() -> Response {
         },
     };
 
-    html_response(&html.render().into_string())
+    html.render().0
 }

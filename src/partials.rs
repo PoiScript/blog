@@ -1,7 +1,7 @@
 use maud::{html, Markup, Render};
 use wasm_bindgen::prelude::*;
 
-use crate::post::UpNext;
+use crate::store::UpNext;
 
 #[wasm_bindgen]
 extern "C" {
@@ -118,7 +118,7 @@ pub fn up_next_next(title: &str, slug: &str) -> Markup {
     }
 }
 
-pub fn up_next(prev: Option<UpNext>, next: Option<UpNext>) -> Markup {
+pub fn up_next(prev: &Option<UpNext>, next: &Option<UpNext>) -> Markup {
     html! {
         .up-next {
             .nav.start {
@@ -155,7 +155,7 @@ pub fn style() -> Markup {
     let url = Global::css_asset();
 
     html! {
-        link rel="stylesheet" href={"/assets/"(url.as_string().unwrap())};
+        link rel="stylesheet" href={(url.as_string().unwrap())};
     }
 }
 
@@ -163,6 +163,6 @@ pub fn script() -> Markup {
     let url = Global::js_asset();
 
     html! {
-        script src={"/assets/"(url.as_string().unwrap())} {}
+        script src={(url.as_string().unwrap())} {}
     }
 }

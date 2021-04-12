@@ -1,15 +1,14 @@
 use json::object;
 use maud::{html, Render};
-use web_sys::*;
+use wasm_bindgen::prelude::*;
 
 use super::{AmpPage, OrgAmp};
 use crate::partials::title_section;
-use crate::store::{get_about, get_css};
-use crate::utils::{html_response, to_datetime};
+use crate::Store;
 
-pub async fn about() -> Response {
-    let post = get_about().await;
-    let css = get_css().await;
+#[wasm_bindgen(js_name = ampAbout)]
+pub fn amp_about(store: Store) -> Result<String, JsValue> {
+    let post = &store.get_about()?;
 
     let schema = object! {
         "@context": "http://schema.org",
@@ -29,8 +28,8 @@ pub async fn about() -> Response {
                 "width": 600
             }
         },
-        "datePublished": to_datetime(post.published).to_rfc2822(),
-        "dateModified": post.updated.map(|dt| to_datetime(dt).to_rfc2822()),
+        "datePublished": post.published.to_rfc2822(),
+        "dateModified": post.updated.map(|dt| dt.to_rfc2822()),
         "author": {
             "@type": "Person",
             "name": "PoiScript"
@@ -40,13 +39,13 @@ pub async fn about() -> Response {
     let amp = AmpPage {
         title: "About",
         canonical: "/about",
-        custom_css: &css,
+        custom_css: &store.amp_custom_css,
         schema,
         main: html! {
             ( title_section("About", Some(&post.published.format("%F").to_string())) )
-            article { (OrgAmp(&post.content)) }
+            article { (OrgAmp::new(&post.content, &store)) }
         },
     };
 
-    html_response(&amp.render().into_string())
+    Ok(amp.render().0)
 }

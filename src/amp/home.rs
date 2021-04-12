@@ -1,15 +1,12 @@
 use json::object;
 use maud::{html, Render};
-use web_sys::*;
+use wasm_bindgen::prelude::*;
 
 use super::AmpPage;
-use crate::store::{get_css, get_posts_list};
-use crate::utils::html_response;
+use crate::Store;
 
-pub async fn home() -> Response {
-    let posts = get_posts_list().await;
-    let css = get_css().await;
-
+#[wasm_bindgen(js_name = ampHome)]
+pub fn amp_home(store: Store) -> String {
     let schema = object! {
         "@context": "http://schema.org",
         "@type": "Webpage",
@@ -33,10 +30,10 @@ pub async fn home() -> Response {
     let amp = AmpPage {
         title: "Home",
         canonical: "/",
-        custom_css: &css,
+        custom_css: &store.amp_custom_css,
         schema,
         main: html! {
-            @for post in posts {
+            @for post in store.posts {
                 ."post-item" {
                     a.title href={ "/post/"(post.slug) } { (post.title) }
                     .subtitle {
@@ -51,5 +48,5 @@ pub async fn home() -> Response {
         },
     };
 
-    html_response(&amp.render().into_string())
+    amp.render().0
 }

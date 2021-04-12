@@ -1,25 +1,67 @@
 use chrono::Utc;
 use maud::{html, Render};
-use orgize::Org;
-use std::fmt::Write;
-use web_sys::*;
+use orgize::{export::HtmlHandler, Element, Event, Org};
+use std::borrow::Cow;
+use std::io::Write;
+use wasm_bindgen::prelude::*;
 
-use crate::store::get_posts_list;
-use crate::utils::to_datetime;
+use crate::{handlers::SolomonBaseHandler, Store};
 
-pub struct OrgRss<'a>(pub &'a str);
+pub struct OrgRss<'a> {
+    pub content: &'a str,
+    pub store: &'a Store,
+}
 
-impl<'a> Render for OrgRss<'a> {
-    fn render_to(&self, buffer: &mut String) {
-        let _ = buffer.write_str("<![CDATA[");
-        let _ = Org::parse(&self.0).write_html(unsafe { &mut buffer.as_mut_vec() });
-        let _ = buffer.write_str("]]>");
+impl<'a> OrgRss<'a> {
+    fn new(content: &'a str, store: &'a Store) -> Self {
+        OrgRss { content, store }
     }
 }
 
-pub async fn rss() -> Response {
-    let posts = get_posts_list().await;
+impl<'a> Render for OrgRss<'a> {
+    fn render_to(&self, buffer: &mut String) {
+        let org = Org::parse(self.content);
+        let mut handler = SolomonBaseHandler::default();
 
+        let mut writer = unsafe { buffer.as_mut_vec() };
+
+        let _ = write!(&mut writer, "<![CDATA[");
+
+        for event in org.iter() {
+            match event {
+                Event::Start(Element::Link(link)) if link.path.starts_with("file:") => {
+                    let path = &link.path[5..];
+                    let alt = link.desc.as_ref().unwrap_or_else(|| &Cow::Borrowed(""));
+
+                    let size = path
+                        .strip_prefix("/assets/")
+                        .and_then(|key| self.store.get_size(key));
+
+                    if let Some((width, height)) = size {
+                        let _ = write!(
+                            &mut writer,
+                            "<img alt=\"{}\" width=\"{}\" height=\"{}\" src=\"{}\"/>",
+                            alt, width, height, path
+                        );
+                    } else {
+                        let _ = write!(&mut writer, "<img alt=\"{}\" src=\"{}\"/>", alt, path);
+                    }
+                }
+                Event::Start(element) => {
+                    let _ = handler.start(&mut writer, element);
+                }
+                Event::End(element) => {
+                    let _ = handler.end(&mut writer, element);
+                }
+            }
+        }
+
+        let _ = write!(&mut writer, "]]>");
+    }
+}
+
+#[wasm_bindgen]
+pub fn rss(store: Store) -> String {
     let body = html! {
         rss version="2.0"
             xmlns:atom="http://www.w3.org/2005/Atom"
@@ -35,7 +77,7 @@ pub async fn rss() -> Response {
                 lastBuildDate { (Utc::now().to_rfc2822()) }
                 language { "zh-Hans" }
                 copyright { "Content licensed under CC-BY-SA-4.0." }
-                @for post in posts {
+                @for post in &store.posts {
                     item {
                         title { (&post.title) }
                         author { "PoiScript" }
@@ -44,22 +86,13 @@ pub async fn rss() -> Response {
                         @for tag in &post.tags {
                             category { (tag) }
                         }
-                        pubDate { (to_datetime(post.published).to_rfc2822()) }
-                        description { ( OrgRss(&post.content) ) }
+                        pubDate { (post.published.to_rfc2822()) }
+                        description { ( OrgRss::new(&post.content, &store) ) }
                     }
                 }
             }
         }
     };
 
-    return Response::new_with_opt_str_and_init(
-        Some(&body.0),
-        ResponseInit::new().status(200).headers(
-            &headers!(
-                "content-type" => "application/rss+xml; charset=utf-8"
-            )
-            .into(),
-        ),
-    )
-    .unwrap();
+    body.0
 }

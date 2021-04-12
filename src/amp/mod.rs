@@ -10,24 +10,71 @@ pub use post::*;
 
 use json::JsonValue;
 use maud::{html, Markup, PreEscaped, Render, DOCTYPE};
-use orgize::Org;
+use orgize::{export::HtmlHandler, Element, Event, Org};
+use std::borrow::Cow;
+use std::io::Write;
 
-use crate::handlers::SolomonHtmlHandler;
 use crate::partials::{footer, header, title};
+use crate::{handlers::SolomonBaseHandler, Store};
 
-pub struct OrgAmp<'a>(pub &'a str);
+pub struct OrgAmp<'a> {
+    content: &'a str,
+    store: &'a Store,
+}
 
-impl<'a> Render for OrgAmp<'a> {
-    fn render_to(&self, buffer: &mut String) {
-        let org = Org::parse(&self.0);
-
-        let _ = org.write_html_custom(
-            unsafe { &mut buffer.as_mut_vec() },
-            &mut SolomonHtmlHandler::default(),
-        );
+impl<'a> OrgAmp<'a> {
+    pub fn new(content: &'a str, store: &'a Store) -> Self {
+        OrgAmp { content, store }
     }
 }
 
+impl<'a> Render for OrgAmp<'a> {
+    fn render_to(&self, buffer: &mut String) {
+        let org = Org::parse(&self.content);
+        let mut handler = SolomonBaseHandler::default();
+
+        let mut writer = unsafe { buffer.as_mut_vec() };
+
+        for event in org.iter() {
+            match event {
+                Event::Start(Element::Link(link)) if link.path.starts_with("file:") => {
+                    let path = &link.path[5..];
+                    let alt = link.desc.as_ref().unwrap_or_else(|| &Cow::Borrowed(""));
+
+                    let size = path
+                        .strip_prefix("/assets/")
+                        .and_then(|key| self.store.get_size(key));
+
+                    if let Some((width, height)) = size {
+                        let _ = write!(
+                            &mut writer,
+                            "<amp-img alt=\"{}\" src=\"{}\" width=\"{}\" height=\"{}\" layout=\"responsive\">\
+                            </amp-img>",
+                            alt,
+                            path,
+                            width,
+                            height,
+                        );
+                    } else {
+                        let _ = write!(
+                            &mut writer,
+                            "<amp-img alt=\"{}\" src=\"{}\" layout=\"responsive\"></amp-img>",
+                            alt, path,
+                        );
+                    }
+                }
+                Event::Start(element) => {
+                    let _ = handler.start(&mut writer, element);
+                }
+                Event::End(element) => {
+                    let _ = handler.end(&mut writer, element);
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct AmpPage<'a> {
     title: &'a str,
     canonical: &'a str,

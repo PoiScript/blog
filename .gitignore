@@ -2,8 +2,8 @@
 /node_modules
 
 # compiled output
-/dist
-/pkg
+dist/
+pkg/
 /target
 
 # logs

@@ -1,41 +1,37 @@
 use maud::{html, Render};
-use web_sys::*;
+use wasm_bindgen::prelude::*;
 
 use super::{HtmlPage, OrgHtml};
 use crate::partials::{title_section, up_next};
-use crate::store::get_posts_list;
-use crate::utils::{html_response, redirect_404_response};
+use crate::Store;
 
-pub async fn post(slug: &str) -> Response {
-    let posts = get_posts_list().await;
+#[wasm_bindgen(js_name = htmlPost)]
+pub fn html_post(store: Store, slug: String) -> Result<String, JsValue> {
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-    let post = posts.into_iter().find(|p| p.slug == slug);
+    let post = store.get_post(&slug)?;
 
-    if let Some(post) = post {
-        let subtitle = html! {
-            (post.published.format("%F"))
-            " ·"
-            @for tag in post.tags {
-                " #" (tag)
-            }
+    let subtitle = html! {
+        (post.published.format("%F"))
+        " ·"
+        @for tag in &post.tags {
+            " #" (tag)
         }
-        .render()
-        .into_string();
-
-        let amphtml = format!("/amp/post/{}", post.slug);
-
-        let html = HtmlPage {
-            title: &post.title,
-            amphtml: Some(&amphtml),
-            main: html! {
-                ( title_section(&post.title, Some(&subtitle)) )
-                article { (OrgHtml(&post.content)) }
-                ( up_next(post.prev, post.next) )
-            },
-        };
-
-        html_response(&html.render().into_string())
-    } else {
-        redirect_404_response()
     }
+    .render()
+    .0;
+
+    let amphtml = format!("/amp/post/{}", post.slug);
+
+    let html = HtmlPage {
+        title: &post.title,
+        amphtml: Some(&amphtml),
+        main: html! {
+            ( title_section(&post.title, Some(&subtitle)) )
+            article { (OrgHtml::new(&post.content, &store)) }
+            ( up_next(&post.prev, &post.next) )
+        },
+    };
+
+    Ok(html.render().0)
 }

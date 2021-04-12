@@ -1,21 +1,16 @@
-const fetch = require("node-fetch");
 const FormData = require("form-data");
 const fs = require("fs");
 const path = require("path");
+const { promisify } = require("util");
+const { walk } = require("@nodelib/fs.walk");
+const { resolve } = require("path");
+const { uploadWorker, writeKVPairs } = require("./cloudflare");
+const { KV_NAMESPACE_ID } = require("./config");
 
-const config = require("./config");
+const walkAsync = promisify(walk);
 
-const { KV_NAMESPACE_ID, ACCOUNT_ID, WORKER_NAME, CF_TOKEN } = {
-  ...config,
-  ...process.env,
-};
-
-if (![KV_NAMESPACE_ID, ACCOUNT_ID, WORKER_NAME, CF_TOKEN].every(Boolean)) {
-  console.error(
-    "One of `KV_NAMESPACE_ID`, `ACCOUNT_ID`, `WORKER_NAME`, `CF_TOKEN` is not set."
-  );
-  process.exit(1);
-}
+const assets = require("../web/dist/webpack-assets.json");
+const dist = resolve(__dirname, "../web/dist");
 
 const fsStream = (seg) => fs.createReadStream(path.resolve(__dirname, seg));
 
@@ -36,6 +31,16 @@ const main = async () => {
           name: "SOLOMON_KV",
           namespace_id: KV_NAMESPACE_ID,
         },
+        {
+          name: "JS_ASSET",
+          text: assets.main.js,
+          type: "plain_text",
+        },
+        {
+          name: "CSS_ASSET",
+          text: assets.main.css,
+          type: "plain_text",
+        },
       ],
       body_part: "script",
     }),
@@ -44,43 +49,27 @@ const main = async () => {
     }
   );
 
-  const workerScript = await fs.promises.readFile(
-    path.resolve(__dirname, "../worker/worker.js"),
-    "utf-8"
-  );
-  const wasmBindgenScript = await fs.promises.readFile(
-    path.resolve(__dirname, "../pkg/solomon.js"),
-    "utf-8"
-  );
+  form.append("script", fsStream("../worker/dist/worker.js"), {
+    contentType: "application/javascript",
+  });
 
-  form.append(
-    "script",
-    workerScript.replace("/* WASM_BINDGEN_SCRIPT */", wasmBindgenScript),
-    {
-      contentType: "application/javascript",
-    }
-  );
-  form.append("solomon_bg", fsStream("../pkg/solomon_bg.wasm"), {
+  form.append("solomon_bg", fsStream("../worker/pkg/solomon_bg.wasm"), {
     contentType: "application/wasm",
   });
 
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/workers/scripts/${WORKER_NAME}`,
-    {
-      method: "PUT",
-      body: form,
-      headers: {
-        authorization: `Bearer ${CF_TOKEN}`,
-      },
-    }
-  );
+  await uploadWorker(form);
 
-  if (res.ok) {
-    console.log("Published");
-  } else {
-    const json = await res.json();
-    throw new Error(json);
-  }
+  const files = await walkAsync(dist, {
+    entryFilter: (entry) => !entry.name.endsWith(".json"),
+  });
+
+  const body = files.map((entry) => ({
+    key: entry.name,
+    base64: true,
+    value: fs.readFileSync(entry.path).toString("base64"),
+  }));
+
+  writeKVPairs(JSON.stringify(body));
 };
 
 main();

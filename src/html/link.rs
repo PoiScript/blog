@@ -1,12 +1,14 @@
 use maud::{html, Render};
-use web_sys::*;
+use wasm_bindgen::prelude::*;
 
 use super::HtmlPage;
 use crate::constants::LINKS;
 use crate::partials::title_section;
-use crate::utils::html_response;
 
-pub async fn link() -> Response {
+#[wasm_bindgen(js_name = htmlLink)]
+pub fn html_link() -> String {
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
     let html = HtmlPage {
         title: "Link",
         amphtml: Some("/amp/link"),
@@ -27,5 +29,5 @@ pub async fn link() -> Response {
         },
     };
 
-    html_response(&html.render().into_string())
+    html.render().0
 }

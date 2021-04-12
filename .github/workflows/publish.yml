@@ -1,6 +1,17 @@
-name: ci
+name: publish
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - src/**
+      - web/**
+      - worker/**
+      - .github/workflows/publish.yml
+  pull_request:
+    paths:
+      - src/**
+      - web/**
+      - worker/**
 
 jobs:
   ci:
@@ -28,7 +39,11 @@ jobs:
         run: yarn install --prefer-offline
 
       - name: Build
-        run: node scripts/build.js
+        run: |
+          yarn run wasm:worker
+          yarn run build:worker
+        env:
+          NODE_ENV: production
 
       - name: Publish
         if: github.ref == 'refs/heads/wasm'

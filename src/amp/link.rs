@@ -1,16 +1,14 @@
 use json::object;
 use maud::{html, Render};
-use web_sys::*;
+use wasm_bindgen::prelude::*;
 
 use super::AmpPage;
 use crate::constants::LINKS;
 use crate::partials::title_section;
-use crate::store::get_css;
-use crate::utils::html_response;
+use crate::Store;
 
-pub async fn link() -> Response {
-    let css = get_css().await;
-
+#[wasm_bindgen(js_name = ampLink)]
+pub fn amp_link(store: Store) -> String {
     let schema = object! {
         "@context": "http://schema.org",
         "@type": "Webpage",
@@ -34,7 +32,7 @@ pub async fn link() -> Response {
     let amp = AmpPage {
         title: "Link",
         canonical: "/link",
-        custom_css: &css,
+        custom_css: &store.amp_custom_css,
         schema,
         main: html! {
             (title_section("Link", None))
@@ -56,5 +54,5 @@ pub async fn link() -> Response {
         },
     };
 
-    html_response(&amp.render().into_string())
+    amp.render().0
 }
