@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 chrono = "0.4.10"
-imagesize = "0.8.0"
+imagesize = "0.9.0"
 json = "0.12.0"
 lazy_static = "1.4.0"
 maud = "0.21.0"
