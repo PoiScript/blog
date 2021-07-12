@@ -37,7 +37,7 @@
     "@angular/platform-server": "~9.0.0-next.12",
     "@nguniversal/common": "~9.0.0-next.3",
     "@nguniversal/express-engine": "~9.0.0-next.6",
-    "@types/fs-extra": "^8.0.1",
+    "@types/fs-extra": "^9.0.12",
     "@types/html-minifier": "^3.5.3",
     "@types/sass": "^1.16.0",
     "fs-extra": "^8.1.0",
